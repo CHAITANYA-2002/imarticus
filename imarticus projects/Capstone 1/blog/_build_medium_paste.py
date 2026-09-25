@@ -64,7 +64,18 @@ def figure(src, caption):
     return f'<figure><img src="{src}" alt="{cap}"><figcaption>{cap}</figcaption></figure>'
 
 
-def build(ref, skip_render):
+def embed_images(page):
+    import base64
+
+    def swap(m):
+        url = m.group(1)
+        data = base64.b64encode((IMAGES / url.rsplit("/", 1)[1]).read_bytes()).decode()
+        return f'<img src="data:image/png;base64,{data}" data-src="{url}"'
+
+    return re.sub(r'<img src="(https://raw[^"]+)"', swap, page)
+
+
+def build(ref, skip_render, embed_to=None):
     text = SRC.read_text(encoding="utf-8")
     lines = text.splitlines()
     title = lines[0].removeprefix("# ").strip()
@@ -93,6 +104,9 @@ def build(ref, skip_render):
         n_h=len(re.findall(r"<h[23]>", body)),
     )
     OUT.write_text(page, encoding="utf-8")
+    if embed_to:
+        Path(embed_to).write_text(embed_images(page), encoding="utf-8")
+        print(f"wrote self-contained preview {embed_to}")
     print(f"wrote {OUT.name}: {n_img} images, {len(tables)} tables rendered, ref={ref}")
 
 
@@ -162,21 +176,30 @@ function selectNode(node) {{
   const r = document.createRange(); r.selectNodeContents(node);
   const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
 }}
+function pasteHtml(node) {{
+  // Always hand Medium the public image URLs, even when the preview shows embedded copies.
+  const c = node.cloneNode(true);
+  c.querySelectorAll('img[data-src]').forEach(i => {{ i.src = i.dataset.src; i.removeAttribute('data-src'); }});
+  return c.innerHTML;
+}}
 async function copyRich(node, label) {{
-  const html = node.innerHTML, text = node.innerText;
+  const html = pasteHtml(node), text = node.innerText;
+  const done = () => say(label + ' copied. Paste it into Medium.');
+  let ok = false;
+  const onCopy = e => {{ e.clipboardData.setData('text/html', html); e.clipboardData.setData('text/plain', text); e.preventDefault(); ok = true; }};
+  document.addEventListener('copy', onCopy, {{once: true}});
+  try {{ document.execCommand('copy'); }} catch (e) {{}}
+  document.removeEventListener('copy', onCopy);
+  if (ok) return done();
   try {{
     await navigator.clipboard.write([new ClipboardItem({{
       'text/html': new Blob([html], {{type: 'text/html'}}),
       'text/plain': new Blob([text], {{type: 'text/plain'}}),
     }})]);
-    say(label + ' copied. Paste it into Medium.');
-    return;
-  }} catch (e) {{ /* fall back to a selection copy */ }}
+    return done();
+  }} catch (e) {{}}
   selectNode(node);
-  let ok = false;
-  try {{ ok = document.execCommand('copy'); }} catch (e) {{}}
-  if (ok) {{ window.getSelection().removeAllRanges(); say(label + ' copied. Paste it into Medium.'); }}
-  else say(label + ' is selected. Press Ctrl+C (Cmd+C on Mac) to copy it.');
+  say(label + ' is selected. Press Ctrl+C (Cmd+C on Mac) to copy it.');
 }}
 document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {{
   const el = document.getElementById(b.dataset.copy);
@@ -192,5 +215,6 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--ref", default="main", help="git ref the raw image URLs point at")
     ap.add_argument("--skip-render", action="store_true", help="reuse existing table PNGs")
+    ap.add_argument("--embed-to", help="also write a copy with images inlined, for viewers that block remote images")
     a = ap.parse_args()
-    build(a.ref, a.skip_render)
+    build(a.ref, a.skip_render, a.embed_to)

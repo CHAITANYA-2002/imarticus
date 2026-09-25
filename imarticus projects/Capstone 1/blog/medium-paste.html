@@ -228,21 +228,30 @@ function selectNode(node) {
   const r = document.createRange(); r.selectNodeContents(node);
   const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
 }
+function pasteHtml(node) {
+  // Always hand Medium the public image URLs, even when the preview shows embedded copies.
+  const c = node.cloneNode(true);
+  c.querySelectorAll('img[data-src]').forEach(i => { i.src = i.dataset.src; i.removeAttribute('data-src'); });
+  return c.innerHTML;
+}
 async function copyRich(node, label) {
-  const html = node.innerHTML, text = node.innerText;
+  const html = pasteHtml(node), text = node.innerText;
+  const done = () => say(label + ' copied. Paste it into Medium.');
+  let ok = false;
+  const onCopy = e => { e.clipboardData.setData('text/html', html); e.clipboardData.setData('text/plain', text); e.preventDefault(); ok = true; };
+  document.addEventListener('copy', onCopy, {once: true});
+  try { document.execCommand('copy'); } catch (e) {}
+  document.removeEventListener('copy', onCopy);
+  if (ok) return done();
   try {
     await navigator.clipboard.write([new ClipboardItem({
       'text/html': new Blob([html], {type: 'text/html'}),
       'text/plain': new Blob([text], {type: 'text/plain'}),
     })]);
-    say(label + ' copied. Paste it into Medium.');
-    return;
-  } catch (e) { /* fall back to a selection copy */ }
+    return done();
+  } catch (e) {}
   selectNode(node);
-  let ok = false;
-  try { ok = document.execCommand('copy'); } catch (e) {}
-  if (ok) { window.getSelection().removeAllRanges(); say(label + ' copied. Paste it into Medium.'); }
-  else say(label + ' is selected. Press Ctrl+C (Cmd+C on Mac) to copy it.');
+  say(label + ' is selected. Press Ctrl+C (Cmd+C on Mac) to copy it.');
 }
 document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
   const el = document.getElementById(b.dataset.copy);
