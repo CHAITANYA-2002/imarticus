@@ -85,9 +85,10 @@ def build(ref, skip_render, embed_to=None):
 
     body = markdown.markdown(body_md, extensions=["tables", "fenced_code"])
 
+    # The post may reference the table PNGs directly; only render when Markdown tables are present.
     tables = re.findall(r"<table>.*?</table>", body, flags=re.S)
-    assert len(tables) == len(TABLE_CAPTIONS), f"expected {len(TABLE_CAPTIONS)} tables, found {len(tables)}"
-    if not skip_render:
+    assert len(tables) in (0, len(TABLE_CAPTIONS)), f"expected 0 or {len(TABLE_CAPTIONS)} tables, found {len(tables)}"
+    if tables and not skip_render:
         render_tables(tables)
     for i, (table, cap) in enumerate(zip(tables, TABLE_CAPTIONS), 1):
         body = body.replace(table, figure(raw_url(ref, f"table-{i:02d}.png"), cap), 1)
