@@ -188,11 +188,15 @@ My favourite detail: I'd drawn this curve once before, on a third of the data, a
 
 All of this ends up in an app with six screens, built for two people. One is the **district officer** deciding where to send a team this morning. The other is the **field officer** standing on a broken road with one bar of signal.
 
-![The Slopewatch risk map running locally. Each square is a real 11 km cell, coloured by risk band.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/demo-risk-map.png)
+The **risk map** draws every square at its real size rather than as a dot, because an 11 km square isn't one hillside and the map shouldn't pretend it is. Hover over one and you see its district, its real-world chance of failure, the main reason it's flagged, and what sits downhill. The **districts** view ranks where teams are needed, and **cell detail** explains a single square in plain language.
 
-The **risk map** draws every square at its real size rather than as a dot, because an 11 km square isn't one hillside and the map shouldn't pretend it is. Hover over one and you see its district, its real-world chance of failure, the main reason it's flagged, and what sits downhill. The **districts** view ranks where teams are needed. **Cell detail** explains a single square in plain language. The **field report** screen lets someone log a crack or a blocked road with no internet at all.
+The **model** screen answers "how good is it?" before anyone has to ask, and puts the baseline right next to the headline score, so the number can never be read out of context:
 
-![Cell detail: one square explained, with its risk band, real-world chance, and the reasons behind it.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/demo-cell-detail.png)
+![The Model screen in the running app: the headline score, its baseline, the lift over guessing, and recall at a 5% budget, with a plain-language note on how to read them.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/demo-model.png)
+
+The **field report** screen is for the person standing on the road. They can log a crack, slope movement or a blocked road with no internet at all. It also says plainly that nothing uploads automatically yet. An early version promised the report "will sync when the network is available", and nothing did. For a safety tool, admitting you're a prototype beats overpromising.
+
+![The Field report screen: a geo-tagged observation form that works offline, with an honest note that reports stay on the device for now.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/demo-field-report.png)
 
 Behind the screens there's a proper data pipeline: four public data sources, twelve stages, and a MySQL warehouse.
 
