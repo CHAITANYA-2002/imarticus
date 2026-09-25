@@ -108,6 +108,10 @@ def build(ref, skip_render, embed_to=None):
 
     for name in missing:
         print(f"WARNING: images/{name} not found; its figure was left out of the paste kit")
+    # Medium turns the newlines and inner <p> of a Markdown blockquote into empty
+    # lines above and below the quote. Paste it as one bare block instead.
+    body = re.sub(r"<blockquote>\s*<p>(.*?)</p>\s*</blockquote>", r"<blockquote>\1</blockquote>", body, flags=re.S)
+
     n_img = body.count("<img ")
     page = TEMPLATE.format(
         title=html.escape(title), subtitle=html.escape(subtitle), body=body, n_img=n_img,
