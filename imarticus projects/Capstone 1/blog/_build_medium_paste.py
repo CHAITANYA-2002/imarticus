@@ -93,12 +93,21 @@ def build(ref, skip_render, embed_to=None):
     for i, (table, cap) in enumerate(zip(tables, TABLE_CAPTIONS), 1):
         body = body.replace(table, figure(raw_url(ref, f"table-{i:02d}.png"), cap), 1)
 
+    missing = []
+
     def img_to_figure(m):
         alt, src = html.unescape(m.group(1)), m.group(2).replace("/main/", f"/{ref}/", 1)
+        name = src.rsplit("/", 1)[1]
+        if not (IMAGES / name).exists():
+            # e.g. app screenshots that have to be taken on a machine running the warehouse
+            missing.append(name)
+            return ""
         return figure(src, alt)
 
     body = re.sub(r'<p><img alt="([^"]*)" src="([^"]*)" ?/?></p>', img_to_figure, body)
 
+    for name in missing:
+        print(f"WARNING: images/{name} not found; its figure was left out of the paste kit")
     n_img = body.count("<img ")
     page = TEMPLATE.format(
         title=html.escape(title), subtitle=html.escape(subtitle), body=body, n_img=n_img,
