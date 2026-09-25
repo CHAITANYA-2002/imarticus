@@ -70,7 +70,7 @@ def embed_images(page):
 
     def swap(m):
         url = m.group(1)
-        data = base64.b64encode((IMAGES / url.rsplit("/", 1)[1]).read_bytes()).decode()
+        data = base64.b64encode((IMAGES / url.split("?")[0].rsplit("/", 1)[1]).read_bytes()).decode()
         return f'<img src="data:image/png;base64,{data}" data-src="{url}"'
 
     return re.sub(r'<img src="(https://raw[^"]+)"', swap, page)
