@@ -19,7 +19,7 @@ Medium does not import Markdown files directly. Two routes, in order of preferen
 Medium's *Import a story* accepts a URL and pulls the images itself. Point it at the rendered Markdown:
 
 ```
-https://github.com/CHAITANYA-2002/personal-projects/blob/main/imarticus%20projects/Capstone%201/blog/slopewatch-medium.md
+https://github.com/CHAITANYA-2002/imarticus/blob/main/imarticus%20projects/Capstone%201/blog/slopewatch-medium.md
 ```
 
 **2. Paste, then re-add images.**

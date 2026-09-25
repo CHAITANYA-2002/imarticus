@@ -30,7 +30,7 @@ That's 0.002% positive. Two consequences follow immediately, and both are traps.
 
 So the first real decision was: don't build that table at all.
 
-![Case-control sampling reduces 82 million cell-days to 11,955 rows](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/diagram-01-a-full-space-time-panel.png)
+![Case-control sampling reduces 82 million cell-days to 11,955 rows](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/diagram-01-a-full-space-time-panel.png)
 
 **Case-control sampling**, borrowed from epidemiology. Take every single case. Then draw a small, *designed* set of controls around them. 82 million rows become 11,955.
 
@@ -50,7 +50,7 @@ True. Completely useless. You've built a season-and-terrain detector.
 
 So the negatives are drawn in three strata, each one deliberately removing a different confound by holding it constant.
 
-![The three control strata](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/diagram-07-the-three-control-strata-temporal.png)
+![The three control strata](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/diagram-07-the-three-control-strata-temporal.png)
 
 **Temporal controls** (50%) use the *same cell* on a *different date*, matched to within 30 days of the event's day-of-year. This forces the question: *why did this monsoon day fail when hundreds of other monsoon days in this exact cell did not?* Terrain is held constant because it's literally the same hillside. Season is held constant by the matching. All that's left is weather.
 
@@ -62,7 +62,7 @@ So the negatives are drawn in three strata, each one deliberately removing a dif
 
 One rule underpins all of it: a candidate negative within **15 km and ±2 days** of a recorded event is *discarded*, never labelled zero.
 
-![Space-time exclusion buffer](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/diagram-08-space-time-exclusion-buffer-around.png)
+![Space-time exclusion buffer](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/diagram-08-space-time-exclusion-buffer-around.png)
 
 The reason is a property of the label source that's easy to skate past. The NASA Global Landslide Catalog records landslides that were **reported**. In remote Himalayan terrain, many are not. A cell 8 km from a confirmed slide, on the same day, in the same storm, may well have failed too — nobody was there to write it down.
 
@@ -94,7 +94,7 @@ Ladakh. The Tibetan plateau. High, cold, arid, sitting outside the monsoon entir
 
 So when background controls were drawn uniformly from that mask, this happened:
 
-![Before and after elevation-band matching](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/diagram-10-before-and-after-elevation-band.png)
+![Before and after elevation-band matching](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/diagram-10-before-and-after-elevation-band.png)
 
 **Control cells had a median elevation of 4,479 m. Cases had 1,433 m.** A gap of over three kilometres.
 
@@ -108,7 +108,7 @@ The bug is in the **sampler**. So controls are now matched to the elevation band
 
 Result: the gap went from **+3,046 m to −17 m**. And `elev_mean` fell out of the top 15 features entirely.
 
-![What the model actually uses](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/chart-shap.png)
+![What the model actually uses](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/chart-shap.png)
 
 Rainfall first — the day itself, then the three-day accumulation, then how many wet days preceded it. Terrain enters fourth, and when it does it enters as `slope_std` — **roughness**, not altitude.
 
@@ -176,7 +176,7 @@ But look at those confidence intervals. They overlap almost completely. **That 0
 
 Now look at the recall column. Random forest catches **5.3%** of real landslides in the top 5% of cells. XGBoost catches **13.0%** — two and a half times as many. Those do *not* overlap.
 
-![Recall at inspection budget](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/chart-recall_at_budget.png)
+![Recall at inspection budget](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/chart-recall_at_budget.png)
 
 This is the metric that actually matters, and it's worth explaining why. PR-AUC is a summary across every threshold. But a district doesn't operate at "every threshold" — it has a fixed number of inspection teams. The real question is: *if I can visit 5% of my cells today, what fraction of the landslides do I reach?*
 
@@ -215,7 +215,7 @@ Not every problem was statistical. Some were just engineering, and the weather b
 
 Each of 11,955 samples needs its own 45-day weather window. Open-Meteo's free tier allows about 10,000 calls a day. Total need: roughly **38,000**. That's a multi-day job that has to survive interruption.
 
-![Weather fetcher control flow](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/diagram-11-weather-fetcher-control-flow-showing.png)
+![Weather fetcher control flow](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/diagram-11-weather-fetcher-control-flow-showing.png)
 
 Two incidents from this that I think generalise.
 
@@ -227,7 +227,7 @@ Now any 4xx that isn't 429 raises immediately, gets logged, and the batch is ski
 
 **Cache keys must not move.** An earlier version merged overlapping date windows within a cell. It was 21% cheaper on API calls. It was also a disaster, because the cache was keyed on `(cell, start_date, end_date)` — and merged boundaries *shift* whenever the sampled dates for that cell change.
 
-![Merged windows versus per-sample windows](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/diagram-16-before-merged-windows-per-cell.png)
+![Merged windows versus per-sample windows](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/diagram-16-before-merged-windows-per-cell.png)
 
 So when I fixed the elevation bug and rebuilt the sample, it invalidated nearly the whole backfill. **2,190 fetched windows. 232 survived.** Days of API budget, gone, because I'd optimised the wrong thing.
 
@@ -241,7 +241,7 @@ Windows are now anchored to their own sample date and never move. And the cache 
 
 So I subsampled the training split at fixed fractions, held the test split fixed, and plotted it.
 
-![Learning curve](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/diagram-18-learning-curve-re-measured-at.png)
+![Learning curve](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/diagram-18-learning-curve-re-measured-at.png)
 
 ```
  frac   rows   positives   EPV   test PR-AUC
@@ -271,7 +271,7 @@ Time to be concrete, because it would be easy to end on the interesting failures
 
 The system runs a twelve-stage pipeline from four public data sources into a MySQL star schema, and serves a six-view application on top.
 
-![Architecture](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/diagram-02-architecture-four-external-sources-feed.png)
+![Architecture](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/diagram-02-architecture-four-external-sources-feed.png)
 
 The honest headline:
 
@@ -293,7 +293,7 @@ Read the budget rows, not the AUC. Inspect the top 10% of cells and you reach ro
 
 A thing I got wrong initially and had to redesign: the model's raw score answers exactly one question, and operations need three.
 
-![Scoring flow](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/diagram-14-scoring-flow-a-forecast-pull.png)
+![Scoring flow](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/diagram-14-scoring-flow-a-forecast-pull.png)
 
 **"How often does this actually happen?"** needs the prior correction — undoing the case-control distortion to recover a real-world frequency. Without it every number is inflated ~10,000×. A raw score of 0.23 becomes something like *1 in 6,100*.
 
@@ -311,7 +311,7 @@ Every limitation below is in the repo's model card too. If a project only lists 
 
 But be precise about which axis is missing. I ran the classic intensity-duration diagnostic against my data, and it **passes** — median intensity falls from 16 mm/day at 3 days to 15 at 15 days, the decreasing power law the literature reports. Antecedent rainfall separates cleanly too: 108 mm before an event against 66 mm for controls.
 
-![Intensity-duration](https://raw.githubusercontent.com/CHAITANYA-2002/personal-projects/main/imarticus%20projects/Capstone%201/blog/images/chart-intensity_duration.png)
+![Intensity-duration](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/chart-intensity_duration.png)
 
 So the data *does* resolve duration and antecedent build-up. What it cannot resolve is the burst that tips an already-saturated slope. That's a narrower and far more defensible claim than "the weather data is too coarse."
 
@@ -343,6 +343,6 @@ So now I write the test.
 
 ---
 
-*Slopewatch is built for SIH 2026, Problem Statement 26192, on public data: the NASA Global Landslide Catalog, Open-Meteo's ERA5-Land archive, Copernicus DEM, and OpenStreetMap. The full technical walkthrough — twenty sections, eighteen diagrams, and every number traced to a committed artefact — lives in the [repository README](https://github.com/CHAITANYA-2002/personal-projects/tree/main/imarticus%20projects/Capstone%201).*
+*Slopewatch is built for SIH 2026, Problem Statement 26192, on public data: the NASA Global Landslide Catalog, Open-Meteo's ERA5-Land archive, Copernicus DEM, and OpenStreetMap. The full technical walkthrough — twenty sections, eighteen diagrams, and every number traced to a committed artefact — lives in the [repository README](https://github.com/CHAITANYA-2002/imarticus/tree/main/imarticus%20projects/Capstone%201).*
 
 *Every figure in this post is generated by a script that verifies it reproduces the metric it illustrates before drawing it. A figure that can't reproduce its own number is worse than no figure.*
