@@ -112,6 +112,10 @@ def build(ref, skip_render, embed_to=None):
     # lines above and below the quote. Paste it as one bare block instead.
     body = re.sub(r"<blockquote>\s*<p>(.*?)</p>\s*</blockquote>", r"<blockquote>\1</blockquote>", body, flags=re.S)
 
+    # Medium draws every <hr> as a centred "· · ·" separator. Section headings
+    # already break the post up, so the separators only add clutter.
+    body = re.sub(r"\s*<hr ?/?>\s*", "\n", body)
+
     n_img = body.count("<img ")
     page = TEMPLATE.format(
         title=html.escape(title), subtitle=html.escape(subtitle), body=body, n_img=n_img,
