@@ -58,7 +58,7 @@ hr.kitline { border:0; border-top:1px solid var(--line); margin:22px 0 0; }
 <figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/card-cover.png" alt="99.998% accurate. Completely useless."><figcaption>99.998% accurate. Completely useless.</figcaption></figure>
 <p>Every monsoon, the news out of Uttarakhand, Himachal and the North East follows the same pattern. A hillside gives way, a highway disappears under mud, and a village is cut off for days. Afterwards someone always asks whether anyone saw it coming.</p>
 <p>That question stuck with me, so I spent six months trying to build something that could help answer it: a model that looks at recent rainfall and at the shape of the land, and tells a district which slopes to worry about today.</p>
-<p>This post is about how that went. I'll be honest up front: the model I ended up with is useful, but modest. The more interesting story is the five separate times the project fooled me along the way, and how I caught each one. If you build models, or you manage people who do, I think at least one of these will look familiar.</p>
+<p>This post is about how that went. I'll be honest up front: the model I ended up with is useful, but modest. The more interesting story is the handful of times the project fooled me along the way, and how I caught each one. If you build models, or you manage people who do, I think at least one of these will look familiar.</p>
 <p>You don't need a machine learning background to follow along. I'll explain the jargon as it comes up.</p>
 <hr />
 <h2>First, a quick look at the problem</h2>
@@ -181,7 +181,7 @@ xgboost         train 0.991   validation 0.214
 <p>Something I got wrong at first was assuming one number could serve everyone. In practice, the people using this ask three different questions.</p>
 <figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-14-scoring-flow-a-forecast-pull.png" alt="From forecast to decision: one model score becomes a real-world likelihood, a risk band, and a priority list."><figcaption>From forecast to decision: one model score becomes a real-world likelihood, a risk band, and a priority list.</figcaption></figure>
 <ul>
-<li><strong>"How likely is this, really?"</strong> This is where the earlier correction comes in. Remember the inflation from sampling? Undo it, and a raw score of 0.23 becomes something like <strong>1 in 6,100</strong>.</li>
+<li><strong>"How likely is this, really?"</strong> This is where the earlier correction comes in. Remember the inflation from sampling? Undo it, and a raw score of 0.23 becomes roughly <strong>1 in 29,000</strong>.</li>
 <li><strong>"How worried should we be?"</strong> Risk bands are set by how many times above normal a cell's risk is, not by the raw score. A fixed rule like "critical above 0.8" would never trigger at all, and the whole map would stay green through a monsoon.</li>
 <li><strong>"Where do I send my only team?"</strong> A moderate risk above a road and two villages matters more than a severe one in empty forest. So exposure (roads, settlements) is added <em>after</em> the model, never as an input. The danger and the consequences are different things, and mixing them hides both.</li>
 </ul>

@@ -8,7 +8,7 @@ Every monsoon, the news out of Uttarakhand, Himachal and the North East follows 
 
 That question stuck with me, so I spent six months trying to build something that could help answer it: a model that looks at recent rainfall and at the shape of the land, and tells a district which slopes to worry about today.
 
-This post is about how that went. I'll be honest up front: the model I ended up with is useful, but modest. The more interesting story is the five separate times the project fooled me along the way, and how I caught each one. If you build models, or you manage people who do, I think at least one of these will look familiar.
+This post is about how that went. I'll be honest up front: the model I ended up with is useful, but modest. The more interesting story is the handful of times the project fooled me along the way, and how I caught each one. If you build models, or you manage people who do, I think at least one of these will look familiar.
 
 You don't need a machine learning background to follow along. I'll explain the jargon as it comes up.
 
@@ -245,7 +245,7 @@ Something I got wrong at first was assuming one number could serve everyone. In 
 
 ![From forecast to decision: one model score becomes a real-world likelihood, a risk band, and a priority list.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/diagram-14-scoring-flow-a-forecast-pull.png)
 
-- **"How likely is this, really?"** This is where the earlier correction comes in. Remember the inflation from sampling? Undo it, and a raw score of 0.23 becomes something like **1 in 6,100**.
+- **"How likely is this, really?"** This is where the earlier correction comes in. Remember the inflation from sampling? Undo it, and a raw score of 0.23 becomes roughly **1 in 29,000**.
 - **"How worried should we be?"** Risk bands are set by how many times above normal a cell's risk is, not by the raw score. A fixed rule like "critical above 0.8" would never trigger at all, and the whole map would stay green through a monsoon.
 - **"Where do I send my only team?"** A moderate risk above a road and two villages matters more than a severe one in empty forest. So exposure (roads, settlements) is added *after* the model, never as an input. The danger and the consequences are different things, and mixing them hides both.
 
