@@ -1,0 +1,98 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Rasterise diagrams</title>
+<style>
+  body { font: 14px ui-monospace, Consolas, monospace; background: #111; color: #ddd;
+         padding: 1.5rem; }
+  .ok { color: #9BC46A; } .bad { color: #E07A7A; }
+</style>
+<h3>SVG to PNG &mdash; walkthrough diagrams for the blog</h3>
+<pre id="log">starting…</pre>
+
+<script>
+// Rasterises every extracted walkthrough diagram to a PNG and POSTs it to the
+// local helper, which writes it into blog/images. Runs same-origin so fetching
+// the SVG sources is allowed; the light palette is forced because the blog and
+// Medium both sit on a white page.
+const SCALE = 2;
+const log = document.getElementById('log');
+const say = (t, cls) => {
+  log.innerHTML += `\n<span class="${cls || ''}">${t}</span>`;
+};
+
+async function listDiagrams() {
+  const res = await fetch('/docs/diagrams/?v=' + Date.now(), { cache: 'no-store' });
+  const html = await res.text();
+  const names = [...html.matchAll(/href="([^"]+\.svg)"/g)].map(m => decodeURIComponent(m[1]));
+  return [...new Set(names.map(n => n.split('/').pop()))].sort();
+}
+
+async function rasterise(name) {
+  // Cache-bust: re-running the extractor changes the file but not the URL,
+  // and a cached fetch silently rasterises the previous version.
+  const text = await fetch('/docs/diagrams/' + encodeURIComponent(name) + '?v=' + Date.now(),
+                           { cache: 'no-store' }).then(r => r.text());
+  const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+  const svg = doc.documentElement;
+
+  const vb = svg.getAttribute('viewBox').split(/\s+/).map(Number);
+  const w = vb[2], h = vb[3];
+  svg.setAttribute('width', w * SCALE);
+  svg.setAttribute('height', h * SCALE);
+
+  // Pin the light palette. The extracted files carry a dark-mode media query,
+  // and whichever way the machine is set would otherwise decide the blog's look.
+  const pin = doc.createElementNS('http://www.w3.org/2000/svg', 'style');
+  pin.textContent = 'svg{color:#151F1C !important;background:#FFFFFF !important;--surface:#FFFFFF !important;--sunk:#E9EDEA !important;--ink-2:#4C5955 !important;--accent:#9A5615 !important;--accent-wash:#F3E6D8 !important;--water:#20666E !important;--water-wash:#DDEAEB !important;--crit:#8F2222 !important;--high:#A2510A !important;--elev:#8A6208 !important;--mod:#456F13 !important;--low:#5A6B72 !important}';
+  svg.appendChild(pin);
+
+  const xml = new XMLSerializer().serializeToString(svg);
+  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+
+  const img = new Image();
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = () => rej(new Error('decode failed'));
+    img.src = url;
+  });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w * SCALE;
+  canvas.height = h * SCALE;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  const png = canvas.toDataURL('image/png');
+  const out = name.replace(/\.svg$/, '.png');
+  const saved = await fetch('http://127.0.0.1:8899/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: out, png }),
+  }).then(r => r.json());
+
+  return `${out}  ${canvas.width}x${canvas.height}  ${Math.round(saved.bytes / 1024)} KB`;
+}
+
+(async () => {
+  try {
+    const names = await listDiagrams();
+    log.textContent = `${names.length} diagrams found`;
+    let done = 0;
+    for (const name of names) {
+      try {
+        say('  ' + await rasterise(name), 'ok');
+        done++;
+      } catch (err) {
+        say(`  FAILED ${name}: ${err.message}`, 'bad');
+      }
+    }
+    say(`\nDONE ${done}/${names.length}`, done === names.length ? 'ok' : 'bad');
+    window.__result = { done, total: names.length };
+  } catch (err) {
+    say('fatal: ' + err.message, 'bad');
+    window.__result = { error: err.message };
+  }
+})();
+</script>

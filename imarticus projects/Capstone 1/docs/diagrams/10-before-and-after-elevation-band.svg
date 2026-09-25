@@ -67,15 +67,15 @@
 <text x="740" y="166" class="t-s" text-anchor="end">6,000 m</text>
 
 <rect x="466" y="130" width="60" height="20" style="fill:var(--accent-2);opacity:.3"/>
-<text x="496" y="180" class="t-s" text-anchor="middle" style="opacity:.8">±1 band</text>
-<text x="496" y="194" class="t-s" text-anchor="middle" style="opacity:.8">1,500 m window</text>
+<text x="520" y="180" class="t-s" text-anchor="middle" style="opacity:.8">±1 band</text>
+<text x="520" y="194" class="t-s" text-anchor="middle" style="opacity:.8">1,500 m window</text>
 
 <rect x="484" y="118" width="26" height="32" style="fill:var(--accent);opacity:.85"/>
 <text x="497" y="110" class="t-m t-acc" text-anchor="middle">1,433</text>
 <text x="497" y="96" class="t-s t-acc" text-anchor="middle">cases</text>
 <rect x="480" y="118" width="8" height="32" style="fill:var(--water);opacity:.85"/>
-<text x="466" y="110" class="t-m t-wat" text-anchor="middle">1,416</text>
-<text x="466" y="96" class="t-s t-wat" text-anchor="middle">controls</text>
+<text x="430" y="132" class="t-m t-wat" text-anchor="middle">1,416</text>
+<text x="430" y="118" class="t-s t-wat" text-anchor="middle">controls</text>
 <text x="600" y="132" class="t-m t-acc">gap −17 m</text>
 
 <rect x="404" y="182" width="344" height="76" class="n-ghost" style="stroke:var(--accent)"/>
