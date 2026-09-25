@@ -38,7 +38,7 @@ hr.kitline { border:0; border-top:1px solid var(--line); margin:22px 0 0; }
 <body>
 <div class="kit">
   <h1>Medium Paste Kit</h1>
-  <p class="lead">Everything below the line pastes into Medium with headings, bold, code and all 26 images intact.</p>
+  <p class="lead">Everything below the line pastes into Medium with headings, bold, code and all 28 images intact.</p>
   <ol class="steps">
     <li>On Medium, click <b>Write</b> to open a new, empty story.</li>
     <li>Click <b>Copy title</b>, click the Title line in Medium, paste. Press Enter.</li>
@@ -50,7 +50,7 @@ hr.kitline { border:0; border-top:1px solid var(--line); margin:22px 0 0; }
   <div class="row"><div class="txt"><div class="lbl">Subtitle</div><div id="s">A landslide early-warning model, a 99.998% accuracy score that meant nothing, and the quiet bug that almost shipped.</div></div><button data-copy="s">Copy subtitle</button></div>
   <button class="big" id="copyArticle">Copy article</button>
   <div class="status" id="status" role="status"></div>
-  <p class="checks">After pasting, check for <b>26 images</b> and <b>14 section headings</b>.
+  <p class="checks">After pasting, check for <b>28 images</b> and <b>14 section headings</b>.
   Suggested topics: Machine Learning, Data Science, Artificial Intelligence, Climate, Python.</p>
   <hr class="kitline">
 </div>
@@ -157,9 +157,11 @@ hr.kitline { border:0; border-top:1px solid var(--line); margin:22px 0 0; }
 <hr />
 <h2>What it looks like in use</h2>
 <p>All of this ends up in an app with six screens, built for two people. One is the <strong>district officer</strong> deciding where to send a team this morning. The other is the <strong>field officer</strong> standing on a broken road with one bar of signal.</p>
-
-<p>The <strong>risk map</strong> draws every square at its real size rather than as a dot, because an 11 km square isn't one hillside and the map shouldn't pretend it is. Hover over one and you see its district, its real-world chance of failure, the main reason it's flagged, and what sits downhill. The <strong>districts</strong> view ranks where teams are needed. <strong>Cell detail</strong> explains a single square in plain language. The <strong>field report</strong> screen lets someone log a crack or a blocked road with no internet at all.</p>
-
+<p>The <strong>risk map</strong> draws every square at its real size rather than as a dot, because an 11 km square isn't one hillside and the map shouldn't pretend it is. Hover over one and you see its district, its real-world chance of failure, the main reason it's flagged, and what sits downhill. The <strong>districts</strong> view ranks where teams are needed, and <strong>cell detail</strong> explains a single square in plain language.</p>
+<p>The <strong>model</strong> screen answers "how good is it?" before anyone has to ask, and puts the baseline right next to the headline score, so the number can never be read out of context:</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/demo-model.png" alt="The Model screen in the running app: the headline score, its baseline, the lift over guessing, and recall at a 5% budget, with a plain-language note on how to read them."><figcaption>The Model screen in the running app: the headline score, its baseline, the lift over guessing, and recall at a 5% budget, with a plain-language note on how to read them.</figcaption></figure>
+<p>The <strong>field report</strong> screen is for the person standing on the road. They can log a crack, slope movement or a blocked road with no internet at all. It also says plainly that nothing uploads automatically yet. An early version promised the report "will sync when the network is available", and nothing did. For a safety tool, admitting you're a prototype beats overpromising.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/demo-field-report.png" alt="The Field report screen: a geo-tagged observation form that works offline, with an honest note that reports stay on the device for now."><figcaption>The Field report screen: a geo-tagged observation form that works offline, with an honest note that reports stay on the device for now.</figcaption></figure>
 <p>Behind the screens there's a proper data pipeline: four public data sources, twelve stages, and a MySQL warehouse.</p>
 <figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-02-architecture-four-external-sources-feed.png" alt="The architecture: four public data sources, a twelve-stage pipeline, a warehouse, and the app on top."><figcaption>The architecture: four public data sources, a twelve-stage pipeline, a warehouse, and the app on top.</figcaption></figure>
 <h3>One number, three questions</h3>
