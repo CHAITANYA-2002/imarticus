@@ -1,8 +1,8 @@
-# I Built an AI to Predict Himalayan Landslides. It Learned to Recognise Tibet Instead.
+# Can We See a Himalayan Landslide Coming? I Built a System to Find Out.
 
-### A landslide early-warning model, a 99.998% accuracy score that meant nothing, and the quiet bug that almost shipped.
+### Slopewatch ranks slopes across the Indian Himalaya by daily landslide risk, using only public data. Here's how it works, what it achieves, and the bug I caught before it could fool anyone.
 
-![99.998% accurate. Completely useless.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/card-cover.png)
+![Check 10% of slopes, reach 29% of landslides: nearly three times better than inspecting at random.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/card-cover.png)
 
 Every monsoon the news from the hills looks the same. A slope in Uttarakhand gives way. A highway in Himachal disappears under mud. A village in the North East is cut off for days. And afterwards, someone always asks: *could we have seen it coming?*
 
@@ -10,7 +10,9 @@ That question is where this project started. The Smart India Hackathon 2026 has 
 
 What I built is called **Slopewatch**. Every day it looks at recent rainfall and at the shape of the land, and ranks which slopes across the Indian Himalaya deserve a closer look.
 
-This post is the story of building it, and mostly of the times it fooled me. I've written it for two kinds of reader. If you've never trained a model, you can follow the whole thing; I explain every term when it shows up. If you do this for a living, look for the short **"For the technical readers"** notes. They carry the details.
+The short version of the result: **if a district can check only one in ten slopes, Slopewatch points them to nearly three times as many real landslides as picking at random.** Getting there meant designing around a few traps that make a model look good for the wrong reasons, and this post walks through each one.
+
+I've written it for two kinds of reader. If you've never trained a model, you can follow the whole thing; I explain every term when it shows up. If you do this for a living, look for the short **"For the technical readers"** notes. They carry the details.
 
 ---
 
@@ -30,7 +32,7 @@ For "what really happened", I used NASA's Global Landslide Catalog. It started w
 
 ---
 
-## The model that was 99.998% accurate
+## The first trap: 99.998% accuracy
 
 22,594 squares × 3,653 days is about **82 million square-days**. Only 1,719 of them had a landslide. That's roughly **one in 48,000**.
 
@@ -38,9 +40,9 @@ It's hard to feel how small that is, so here it is drawn out:
 
 ![Each dot is one square on one day. Exactly one of them had a landslide.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/card-one-in-48000.png)
 
-My first model looked at all of that and found the laziest rule possible: *always say "no landslide".* It was right 99.998% of the time.
+Train a model naively on data like this and it finds the laziest rule possible: *always say "no landslide".* It's right 99.998% of the time.
 
-And it was useless, because it never warned anyone about anything.
+And it's useless, because it never warns anyone about anything.
 
 That's why the word "accuracy" doesn't appear anywhere in how I judge this system. When the thing you care about is this rare, accuracy rewards a model for ignoring it.
 
@@ -74,7 +76,7 @@ One more rule mattered just as much. NASA's catalogue only lists landslides that
 
 ---
 
-## The bug that almost shipped
+## The bug I caught before it shipped
 
 This is the story I most want to tell.
 
@@ -226,7 +228,7 @@ Three of the four regions score close to or above the future-years test. That su
 
 ![The final numbers, on the held-out test years.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/table-03.png)
 
-**In one line: it's 1.45× better than guessing.** That's real, and it's modest, and I'd rather say so plainly. In practical terms, if a district inspects its top 10% of squares, it reaches about three in ten landslides. Whether that's worth doing depends on what an inspection costs. That's a call for a district engineer, not for me.
+**In one line: check the top 10% of squares and you reach 28.7% of the landslides, nearly three times the 10% you'd reach at random.** At a 5% budget it's 2.6 times random; at 20% it's 2.3 times. On the stricter all-thresholds measure it's 1.45 times better than guessing, and I'd rather state that plainly too. The main ceiling is the rainfall data, not the method, which is the next section.
 
 ---
 
@@ -260,8 +262,8 @@ What it can't see is the final burst that tips a soaked slope over.
 
 **4. Measure your excuses.** "Not enough data" became a curve that showed exactly what more data was worth: not much. The next real gain will come from sharper rainfall data, not more rows.
 
-The elevation bug is the one I keep coming back to. It produced a sensible-looking chart, respectable scores, and a model that had quietly learned to recognise Tibet. I only caught it because a number felt too big and I went looking.
+The elevation bug is the one I keep coming back to. It produced a sensible-looking chart and respectable scores, the kind of result that ships in plenty of projects. Catching it came down to one habit: don't accept a result until you understand *why* it's true. That habit, and the test that locks the fix in place, are as much the output of this project as the model itself.
 
-That isn't a process. It's luck plus suspicion. I'd like to rely a little less on the luck.
+If you're building something where the rare event is the one that matters, whether that's landslides, fraud, equipment failure or disease, I hope some of this saves you a few weeks.
 
-*The code, pipeline and model card are open on GitHub: [github.com/CHAITANYA-2002/imarticus](https://github.com/CHAITANYA-2002/imarticus). If you work on landslides, disaster risk or rare-event modelling, I'd genuinely like to hear where you think this falls short.*
+*The code, pipeline and model card are open on GitHub: [github.com/CHAITANYA-2002/imarticus](https://github.com/CHAITANYA-2002/imarticus). If you work on landslides, disaster risk or rare-event modelling, I'd love to hear from you, and feedback on where to take it next is very welcome.*

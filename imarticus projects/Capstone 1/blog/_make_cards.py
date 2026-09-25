@@ -27,12 +27,12 @@ CONTOURS = "".join(
 COVER = BASE + f"""
 <div class="card" style="height:788px;background:#16242a;position:relative;overflow:hidden;">
   <svg width="1400" height="788" style="position:absolute;inset:0">{CONTOURS}</svg>
-  <div style="position:absolute;left:96px;top:150px;width:900px;">
-    <div class="sans" style="color:#e8b04b;font-size:22px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;">A landslide early-warning model for the Himalaya</div>
-    <div style="color:#fff;font-size:92px;line-height:1.04;margin-top:34px;font-weight:700;">99.998% accurate.</div>
-    <div style="color:#9fb4ba;font-size:92px;line-height:1.04;font-weight:700;">Completely useless.</div>
-    <div class="sans" style="color:#c9d6d9;font-size:28px;line-height:1.45;margin-top:40px;width:760px;">
-      How I found the bug that taught my model to recognise Tibet instead of predicting landslides.</div>
+  <div style="position:absolute;left:96px;top:150px;width:1240px;">
+    <div class="sans" style="color:#e8b04b;font-size:22px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;">Slopewatch · Himalayan landslide early warning</div>
+    <div style="color:#fff;font-size:88px;line-height:1.06;margin-top:34px;font-weight:700;">Check 10% of slopes.</div>
+    <div style="color:#e8b04b;font-size:88px;line-height:1.06;font-weight:700;">Reach 29% of landslides.</div>
+    <div class="sans" style="color:#c9d6d9;font-size:28px;line-height:1.45;margin-top:40px;width:800px;">
+      Nearly 3× better than inspecting at random, built entirely from public rainfall and terrain data.</div>
   </div>
 </div>
 """
