@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medium Paste Kit</title>
+<style>
+:root { --bg:#fbfaf7; --panel:#fff; --ink:#242424; --muted:#6b6b6b; --line:#e6e3dc; --accent:#1a8917; --accent-ink:#fff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#141414; --panel:#1d1d1d; --ink:#ececec; --muted:#a0a0a0; --line:#333; --accent:#3fb950; --accent-ink:#0b0b0b; } }
+:root[data-theme="dark"] { --bg:#141414; --panel:#1d1d1d; --ink:#ececec; --muted:#a0a0a0; --line:#333; --accent:#3fb950; --accent-ink:#0b0b0b; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 -apple-system,'Segoe UI',Helvetica,Arial,sans-serif; }
+.kit { max-width:760px; margin:0 auto; padding:24px 16px 8px; }
+.kit h1 { font-size:22px; margin:0 0 4px; }
+.kit p.lead { color:var(--muted); margin:0 0 18px; }
+ol.steps { padding-left:20px; margin:0 0 18px; }
+ol.steps li { margin:6px 0; }
+.row { display:flex; gap:10px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:8px 0; }
+.row .txt { flex:1; min-width:0; }
+.row .lbl { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+button { font:600 14px/1 inherit; font-family:inherit; border:0; border-radius:999px; padding:10px 16px; cursor:pointer; background:var(--accent); color:var(--accent-ink); white-space:nowrap; }
+button.big { width:100%; padding:14px; font-size:16px; margin:10px 0 4px; }
+.status { min-height:1.4em; font-size:14px; color:var(--accent); text-align:center; }
+.checks { font-size:14px; color:var(--muted); }
+hr.kitline { border:0; border-top:1px solid var(--line); margin:22px 0 0; }
+#article { max-width:720px; margin:0 auto; padding:8px 16px 64px; font:20px/1.6 Georgia,'Times New Roman',serif; }
+#article h2 { font:700 28px/1.25 -apple-system,'Segoe UI',Helvetica,Arial,sans-serif; margin:40px 0 8px; }
+#article h3 { font:700 21px/1.3 -apple-system,'Segoe UI',Helvetica,Arial,sans-serif; margin:30px 0 6px; }
+#article img { max-width:100%; height:auto; display:block; margin:0 auto; background:#fff; }
+#article figure { margin:32px 0; }
+#article figcaption { font:14px/1.4 -apple-system,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--muted); text-align:center; margin-top:8px; }
+#article pre { background:var(--panel); border:1px solid var(--line); padding:14px; overflow-x:auto; font-size:14px; line-height:1.45; }
+#article code { font-family:Menlo,Consolas,monospace; font-size:.85em; }
+#article hr { border:0; text-align:center; margin:36px 0; }
+#article hr::after { content:'. . .'; letter-spacing:.6em; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="kit">
+  <h1>Medium Paste Kit</h1>
+  <p class="lead">Everything below the line pastes into Medium with headings, bold, code and all 15 images intact.</p>
+  <ol class="steps">
+    <li>On Medium, click <b>Write</b> to open a new, empty story.</li>
+    <li>Click <b>Copy title</b>, click the Title line in Medium, paste. Press Enter.</li>
+    <li>Click <b>Copy subtitle</b>, paste on the second line, press Enter.</li>
+    <li>Click <b>Copy article</b>, paste on the empty line below. Wait for every image to finish uploading.</li>
+    <li>Check it, then use <b>Publish</b>: add up to 5 topics and set the preview image to the first diagram.</li>
+  </ol>
+  <div class="row"><div class="txt"><div class="lbl">Title</div><div id="t">My Landslide Model Was 99.998% Accurate. It Was Also Completely Useless.</div></div><button data-copy="t">Copy title</button></div>
+  <div class="row"><div class="txt"><div class="lbl">Subtitle</div><div id="s">What six months of building a rare-event early-warning system taught me about the difference between a number that looks good and a number that means something — including the bug I found in my own sampler that would have shipped silently.</div></div><button data-copy="s">Copy subtitle</button></div>
+  <button class="big" id="copyArticle">Copy article</button>
+  <div class="status" id="status" role="status"></div>
+  <p class="checks">After pasting, check for <b>15 images</b> and <b>16 section headings</b>.
+  Suggested topics: Machine Learning, Data Science, Artificial Intelligence, Climate, Python.</p>
+  <hr class="kitline">
+</div>
+<article id="article">
+<p>There is a moment in every machine learning project where you get a number back and feel good about it.</p>
+<p>Mine came early. I was building a landslide early-warning system for the Indian Himalaya, and my first model reported <strong>99.998% accuracy</strong>.</p>
+<p>It predicted "no landslide" for every cell, on every day, forever.</p>
+<p>Both of those statements are true at the same time, and the gap between them is the entire problem. This is the story of closing it — and of the four other times the project lied to me before I caught it.</p>
+<hr />
+<h2>The number that ruins everything</h2>
+<p>Across the study area there is roughly <strong>one landslide per 48,000 cell-days</strong>.</p>
+<p>That single figure dictates every design decision that follows, so it's worth sitting with. My study area is the Himalayan arc plus India's North Eastern Region, carved into a grid of 40,800 cells at 0.1° resolution — each about 11 km on a side. After filtering to cells with real slope, 22,594 remain. Multiply by 3,653 days of study window and you get roughly <strong>82 million cell-days</strong>.</p>
+<p>The catalogue records 1,719 landslides inside them.</p>
+<p>That's 0.002% positive. Two consequences follow immediately, and both are traps.</p>
+<p><strong>Accuracy becomes actively misleading.</strong> Not merely uninformative — <em>misleading</em>. A model that always says "no" scores 99.998%, and that number conceals total failure behind a figure that looks like triumph. My metrics module never computes accuracy. Not because it's unfashionable, but because reporting it would be closer to lying than to measuring.</p>
+<p><strong>The obvious data structure becomes impossible.</strong> Materialising all 82 million cell-days would mean 82 million rows, each needing a 45-day weather history fetched from an API that allows 10,000 calls a day. The data acquisition alone would take centuries.</p>
+<p>So the first real decision was: don't build that table at all.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-01-a-full-space-time-panel.png" alt="Case-control sampling reduces 82 million cell-days to 11,955 rows"><figcaption>Case-control sampling reduces 82 million cell-days to 11,955 rows</figcaption></figure>
+<p><strong>Case-control sampling</strong>, borrowed from epidemiology. Take every single case. Then draw a small, <em>designed</em> set of controls around them. 82 million rows become 11,955.</p>
+<p>There's a catch, and it's the kind that bites people who forget it: you have deliberately broken the base rate. Your sample is 13.8% positive; the world is 0.002% positive. Every probability the model produces is inflated by roughly four orders of magnitude.</p>
+<p>That distortion is exactly recoverable — it's a known log-odds offset you subtract at scoring time. But only if you remember. I'll come back to what happens when you forget.</p>
+<hr />
+<h2>Three kinds of "no"</h2>
+<p>Here's where it gets interesting. Which controls?</p>
+<p>The naive answer is "random cell-days". Draw one at random: it's probably flat, probably dry, probably in January. Train a model to separate <em>those</em> from monsoon landslides in the mountains, and it will do brilliantly — by learning "mountain in July versus plain in winter."</p>
+<p>True. Completely useless. You've built a season-and-terrain detector.</p>
+<p>So the negatives are drawn in three strata, each one deliberately removing a different confound by holding it constant.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-07-the-three-control-strata-temporal.png" alt="The three control strata"><figcaption>The three control strata</figcaption></figure>
+<p><strong>Temporal controls</strong> (50%) use the <em>same cell</em> on a <em>different date</em>, matched to within 30 days of the event's day-of-year. This forces the question: <em>why did this monsoon day fail when hundreds of other monsoon days in this exact cell did not?</em> Terrain is held constant because it's literally the same hillside. Season is held constant by the matching. All that's left is weather.</p>
+<p><strong>Spatial controls</strong> (30%) use the <em>same date</em> in a <em>different cell</em>, 25–300 km away. <em>The storm hit both — why did only one slope go?</em> Now weather is roughly held constant and terrain varies.</p>
+<p><strong>Background controls</strong> (20%) are a random cell and date. <em>What does an ordinary day on this kind of slope look like?</em> This re-establishes the base rate.</p>
+<h3>The guard rail that matters as much as the strata</h3>
+<p>One rule underpins all of it: a candidate negative within <strong>15 km and ±2 days</strong> of a recorded event is <em>discarded</em>, never labelled zero.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-08-space-time-exclusion-buffer-around.png" alt="Space-time exclusion buffer"><figcaption>Space-time exclusion buffer</figcaption></figure>
+<p>The reason is a property of the label source that's easy to skate past. The NASA Global Landslide Catalog records landslides that were <strong>reported</strong>. In remote Himalayan terrain, many are not. A cell 8 km from a confirmed slide, on the same day, in the same storm, may well have failed too — nobody was there to write it down.</p>
+<p>Labelling that cell "no landslide" is not a missing label. It is teaching the model something false.</p>
+<p>46,234 cell-date pairs sit inside that buffer and are silently dropped. Note also that the spatial control annulus starts at 25 km — outside the 15 km exclusion radius. That's not a coincidence; it's so the two rules can never contradict each other.</p>
+<hr />
+<h2>The bug that would have shipped</h2>
+<p>Now the part I actually want to tell you about.</p>
+<p>I trained the model. I pulled up the SHAP chart — the standard way of asking "what is this thing actually using?" — and <code>elev_mean</code>, the mean elevation of the cell, was the top feature.</p>
+<p>At <strong>2.3 times the weight of the runner-up.</strong></p>
+<p>Here's the thing: that is not <em>obviously</em> wrong. Elevation is a perfectly plausible landslide predictor. Higher terrain is steeper, colder, more fractured. If you showed that chart in a review, most people would nod.</p>
+<p>What bothered me was the magnitude. Landslides are a rainfall phenomenon. The literature is unambiguous about this — antecedent rainfall saturates a slope over weeks, then one burst tips it. Rainfall should dominate. It didn't. It wasn't even close.</p>
+<p>So I went looking, and found the bug one full pipeline stage away from where it surfaced.</p>
+<p>My hill mask — the filter deciding which cells are "mountain" enough to model — is a single threshold: <strong>mean slope ≥ 5°</strong>. That is a defensible rule. A landslide needs a slope; keeping floodplain cells only dilutes the negative pool.</p>
+<p>It is also, I discovered, the entire problem. Because <strong>a high plateau is steep too.</strong></p>
+<p>Ladakh. The Tibetan plateau. High, cold, arid, sitting outside the monsoon entirely — and comfortably above 5° of mean slope. They sail straight through the mask.</p>
+<p>So when background controls were drawn uniformly from that mask, this happened:</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-10-before-and-after-elevation-band.png" alt="Before and after elevation-band matching"><figcaption>Before and after elevation-band matching</figcaption></figure>
+<p><strong>Control cells had a median elevation of 4,479 m. Cases had 1,433 m.</strong> A gap of over three kilometres.</p>
+<p>The model was not learning what makes a slope fail. It was learning to tell a Tibetan plateau from a Himalayan valley. That's a real distinction, and a completely different question from the one I was asking. It would have scored well. It would have generalised to nothing.</p>
+<h3>The fix, and what it isn't</h3>
+<p>The instinct is to fix the mask. That's wrong — the mask is correct. Those plateau cells genuinely <em>are</em> steep. <code>is_hill</code> is doing its job.</p>
+<p>The bug is in the <strong>sampler</strong>. So controls are now matched to the elevation band of the case they're drawn around: 500 m bands, ±1 band tolerance. Background draws anchor on a case cell <em>first</em>, then pick a cell from that anchor's band.</p>
+<p>Result: the gap went from <strong>+3,046 m to −17 m</strong>. And <code>elev_mean</code> fell out of the top 15 features entirely.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/chart-shap.png" alt="What the model actually uses"><figcaption>What the model actually uses</figcaption></figure>
+<p>Rainfall first — the day itself, then the three-day accumulation, then how many wet days preceded it. Terrain enters fourth, and when it does it enters as <code>slope_std</code> — <strong>roughness</strong>, not altitude.</p>
+<p>That is the physics the landslide literature describes. And I want to be precise about what produced it: <strong>I did not change the model.</strong> Not one hyperparameter. I changed how the comparison group was drawn, and the model started answering a different question.</p>
+<h3>The test I wrote so it can't come back</h3>
+<p>This is the part I'd push hardest on if I were reviewing someone else's version of this project. A fix you can't detect regressing isn't a fix.</p>
+<p>So there's a regression test that builds a synthetic world: plateau cells at 4,500 m and slope cells at 1,400 m, <strong>interleaved in space</strong>. That interleaving is the whole point. If the plateau sat in its own corner, the 25–300 km spatial annulus would exclude it by accident, and the test would pass for the wrong reason.</p>
+<p>Interleaved, distance tells you nothing. Only elevation-band matching can pass.</p>
+<h3>What I'm careful not to claim</h3>
+<p>Here's where it would be easy to oversell. I could tell you PR-AUC improved after the fix.</p>
+<p>I won't, because it isn't a fair comparison. Different sample, different rows, different test split — and my weather backfill was still growing underneath the whole thing, so the two models were never scored on the same data.</p>
+<p><strong>Only the SHAP ranking is a valid before/after.</strong> Claiming a metric improvement there would be exactly the quiet dishonesty the rest of this system exists to prevent. Which brings me to the next thing that nearly fooled me.</p>
+<hr />
+<h2>The score dropped. The model got better.</h2>
+<p>Some weeks later my weather coverage went from 20% to 74% — roughly three times the training data. I retrained, expecting the headline number to climb.</p>
+<p><strong>PR-AUC fell from 0.410 to 0.244.</strong></p>
+<p>That looks like a disaster. It is not. Look at what happened underneath:</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/table-01.png" alt="Same model, more data: PR-AUC falls with the base rate while every rate-independent metric improves"><figcaption>Same model, more data: PR-AUC falls with the base rate while every rate-independent metric improves</figcaption></figure>
+<p>The base rate fell <em>with</em> the score. PR-AUC has to be read against the base rate — it's the area under a curve whose floor is that rate. A PR-AUC of 0.244 against a 0.168 base rate is very nearly the same model as 0.410 against 0.267.</p>
+<p>And everything <em>not</em> tied to the base rate improved. Brier score down. Calibration tighter. Recall at a realistic inspection budget up 40%. Best of all: the gap between spatial and temporal generalisation flipped positive, meaning the model now does <em>slightly better</em> on regions it has never seen than on future dates in regions it knows.</p>
+<p>Why did the base rate move? My fetch order prioritised cases, so early on the covered sample was case-heavy. As coverage grew, composition normalised toward the designed ratio.</p>
+<p>If I had reported "PR-AUC dropped from 0.41 to 0.24 after adding more data," I'd have been stating something technically accurate and substantively false. This is precisely why every PR-AUC in this project is printed with a bootstrap confidence interval beside it.</p>
+<hr />
+<h2>When your headline metric ties, ask a different question</h2>
+<p>At 74% coverage I trained three models. Here's the comparison:</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/table-02.png" alt="Three models at 74% coverage: PR-AUC intervals overlap; recall at budget does not"><figcaption>Three models at 74% coverage: PR-AUC intervals overlap; recall at budget does not</figcaption></figure>
+<p>Sort by PR-AUC and random forest wins by 0.0035.</p>
+<p>But look at those confidence intervals. They overlap almost completely. <strong>That 0.0035 is noise.</strong> Sorting on it is sorting on nothing.</p>
+<p>Now look at the recall column. Random forest catches <strong>5.3%</strong> of real landslides in the top 5% of cells. XGBoost catches <strong>13.0%</strong> — two and a half times as many. Those do <em>not</em> overlap.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/chart-recall_at_budget.png" alt="Recall at inspection budget"><figcaption>Recall at inspection budget</figcaption></figure>
+<p>This is the metric that actually matters, and it's worth explaining why. PR-AUC is a summary across every threshold. But a district doesn't operate at "every threshold" — it has a fixed number of inspection teams. The real question is: <em>if I can visit 5% of my cells today, what fraction of the landslides do I reach?</em></p>
+<p>So the selection rule changed. Models whose PR-AUC interval overlaps the leader's are treated as <strong>tied</strong>, and the tie breaks on recall at budget.</p>
+<p>With one guard: <strong>the tie-break validates itself before it applies.</strong> If the validation split and the test split disagreed about which tied model has better recall, the rule falls back to the PR-AUC leader — because a tie-break that only holds on the split you measured it on isn't a tie-break, it's tuning. They agreed here. XGBoost ships.</p>
+<hr />
+<h2>The trees turned into lookup tables</h2>
+<p>That same jump in data caused a different failure, and this one is a nice illustration of how a reasonable-looking guard can measure the wrong thing.</p>
+<p>My code scaled tree capacity by the number of positives: under 500, keep the trees shallow; above it, let them grow. Sensible.</p>
+<p>Going from 20% to 74% coverage took my training positives from 465 to <strong>941</strong>. Crossed the threshold. Trees got deep.</p>
+<pre><code>random_forest   train 0.934   validation 0.241
+xgboost         train 0.991   validation 0.214
+</code></pre>
+<p>Training PR-AUC of 0.99. Validation of 0.21. That is not a model, it's a lookup table — it had memorised the training rows.</p>
+<p>The gate was measuring the wrong quantity. 941 positives <em>sounds</em> comfortable, right up until you divide it by <strong>41 features</strong>. That's 23 events per variable. For anything capable of memorising a row, 23 is thin.</p>
+<p>The gate now measures <strong>events per variable</strong>, with the flexible branch closed below 50. Both tree models immediately got <em>better</em> on held-out data once their capacity was tightened.</p>
+<p>What I like about this one: I diagnosed it entirely from the train-versus-validation gap. The test split was never consulted, so the fix cost me nothing in terms of held-out honesty.</p>
+<hr />
+<h2>Fighting an API that fights back</h2>
+<p>Not every problem was statistical. Some were just engineering, and the weather backfill was the long pole of the entire project.</p>
+<p>Each of 11,955 samples needs its own 45-day weather window. Open-Meteo's free tier allows about 10,000 calls a day. Total need: roughly <strong>38,000</strong>. That's a multi-day job that has to survive interruption.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-11-weather-fetcher-control-flow-showing.png" alt="Weather fetcher control flow"><figcaption>Weather fetcher control flow</figcaption></figure>
+<p>Two incidents from this that I think generalise.</p>
+<p><strong>HTTP 400 is not HTTP 429.</strong> My fetcher had one retry policy: back off, retry four times, then raise. Reasonable for rate limits. Then one day the daemon died on a <code>400</code> — and took down a run that still had 10,000 good windows left to fetch.</p>
+<p>A 429 is a statement about <em>the moment</em>. Wait, and it resolves. A 400 is a statement about <em>the request itself</em> — in this case, asking the ERA5 reanalysis archive for a date it hasn't processed yet. No amount of backoff will ever change that answer. Retrying it four times just delays the same failure and then throws away the entire run.</p>
+<p>Now any 4xx that isn't 429 raises immediately, gets logged, and the batch is skipped. The run continues.</p>
+<p><strong>Cache keys must not move.</strong> An earlier version merged overlapping date windows within a cell. It was 21% cheaper on API calls. It was also a disaster, because the cache was keyed on <code>(cell, start_date, end_date)</code> — and merged boundaries <em>shift</em> whenever the sampled dates for that cell change.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-16-before-merged-windows-per-cell.png" alt="Merged windows versus per-sample windows"><figcaption>Merged windows versus per-sample windows</figcaption></figure>
+<p>So when I fixed the elevation bug and rebuilt the sample, it invalidated nearly the whole backfill. <strong>2,190 fetched windows. 232 survived.</strong> Days of API budget, gone, because I'd optimised the wrong thing.</p>
+<p>Windows are now anchored to their own sample date and never move. And the cache check asks a better question: not "does this filename exist" but "are all the days I need present <em>somewhere</em> on disk". The days don't care which file they arrived in.</p>
+<hr />
+<h2>How much data is enough? Measure it.</h2>
+<p>"The dataset is small" is an excuse until you measure it, at which point it becomes a finding.</p>
+<p>So I subsampled the training split at fixed fractions, held the test split fixed, and plotted it.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-18-learning-curve-re-measured-at.png" alt="Learning curve"><figcaption>Learning curve</figcaption></figure>
+<pre><code> frac   rows   positives   EPV   test PR-AUC
+ 0.25   1567      235      5.7   0.260
+ 0.40   2507      376      9.2   0.271
+ 0.55   3448      518     12.6   0.282
+ 0.70   4389      659     16.1   0.288
+ 0.85   5329      800     19.5   0.292
+ 1.00   6269      941     23.0   0.291
+</code></pre>
+<p>Quadrupling the rows bought <strong>+0.031</strong>. The last 1.4× bought +0.003. The final step is <em>negative</em>.</p>
+<p><strong>The curve has stopped climbing.</strong> More data is no longer the constraint.</p>
+<p>Here's my favourite detail in this whole project. This was the <em>second</em> time I measured that curve. The first, on a third of the data, extrapolated that another 4× would buy +0.02 to +0.04.</p>
+<p>The actual 3× bought <strong>+0.031</strong>.</p>
+<p>An extrapolation that survives its own test is worth considerably more than the point estimate it came from. It means when I say "finishing the backfill won't move the score much," that isn't a hunch — it's a prediction the method has already demonstrated it can make.</p>
+<hr />
+<h2>So what does it actually do?</h2>
+<p>Time to be concrete, because it would be easy to end on the interesting failures and skip the deliverable.</p>
+<p>The system runs a twelve-stage pipeline from four public data sources into a MySQL star schema, and serves a six-view application on top.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-02-architecture-four-external-sources-feed.png" alt="Architecture"><figcaption>Architecture</figcaption></figure>
+<p>The honest headline:</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/table-03.png" alt="The honest headline, on the held-out test split"><figcaption>The honest headline, on the held-out test split</figcaption></figure>
+<p><strong>1.45× better than guessing.</strong> That is a real but modest signal, and I'd rather state it plainly than dress it up.</p>
+<p>Read the budget rows, not the AUC. Inspect the top 10% of cells and you reach roughly three in ten landslides. Whether that's useful depends entirely on what inspecting a cell costs — and that's a question for a district engineer, not for me.</p>
+<h3>Three questions, not one</h3>
+<p>A thing I got wrong initially and had to redesign: the model's raw score answers exactly one question, and operations need three.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-14-scoring-flow-a-forecast-pull.png" alt="Scoring flow"><figcaption>Scoring flow</figcaption></figure>
+<p><strong>"How often does this actually happen?"</strong> needs the prior correction — undoing the case-control distortion to recover a real-world frequency. Without it every number is inflated ~10,000×. A raw score of 0.23 becomes something like <em>1 in 6,100</em>.</p>
+<p><strong>"How urgently should this be inspected?"</strong> needs risk bands, and here's a subtlety that cost me a rebuild: the bands are cut on <strong>relative risk</strong>, not the raw score. A model calibrated against a 15% base rate produces scores clustered near 0.15. A rule like "critical above 0.80" would <em>never fire</em> — the whole map would read "low" straight through a monsoon. Cutting at 5× the background rate also says something an officer can act on.</p>
+<p><strong>"Where do I send the one team I have?"</strong> needs exposure. A moderate-risk cell above a district road and two villages outranks a severe one in empty forest. Exposure is deliberately <em>not</em> a model input — it's joined downstream, because hazard and consequence are different things and conflating them hides both.</p>
+<hr />
+<h2>What it can't do</h2>
+<p>Every limitation below is in the repo's model card too. If a project only lists what it achieves, it's marketing.</p>
+<p><strong>Daily rainfall totals cannot see the trigger.</strong> This is the largest cap on performance, and it's a <em>data</em> limit, not a model limit. Landslides respond to sub-daily rainfall intensity — millimetres per hour. My model sees a 24-hour sum. A three-hour cloudburst and a full day of drizzle can be identical in my data and completely different on a hillside.</p>
+<p>But be precise about which axis is missing. I ran the classic intensity-duration diagnostic against my data, and it <strong>passes</strong> — median intensity falls from 16 mm/day at 3 days to 15 at 15 days, the decreasing power law the literature reports. Antecedent rainfall separates cleanly too: 108 mm before an event against 66 mm for controls.</p>
+<figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/chart-intensity_duration.png" alt="Intensity-duration"><figcaption>Intensity-duration</figcaption></figure>
+<p>So the data <em>does</em> resolve duration and antecedent build-up. What it cannot resolve is the burst that tips an already-saturated slope. That's a narrower and far more defensible claim than "the weather data is too coarse."</p>
+<p><strong>11 km cells against 1–2 km rainfall.</strong> The grid matches ERA5-Land's native resolution — no false precision — but Himalayan rainfall varies sharply over a kilometre or two. The predictor often does not see the rain that caused the slide.</p>
+<p><strong>Reporting bias is unfixable.</strong> The exclusion buffer mitigates it. Nothing removes it.</p>
+<p><strong>This is not an operational warning system.</strong> No hourly nowcast, no validation against official bulletins, no human in the loop. It ranks cells for inspection. Presenting it as anything more would be irresponsible.</p>
+<hr />
+<h2>What I'd tell you</h2>
+<p>If you take four things from this:</p>
+<p><strong>1. Your metric can be technically correct and substantively false.</strong> 99.998% accuracy. PR-AUC "dropping" while the model improves. Both are real numbers that point the wrong way. Always ask what the number is measured <em>against</em>.</p>
+<p><strong>2. The bug is often one stage upstream of where it hurts.</strong> My SHAP chart looked wrong. The cause was a slope threshold two stages earlier that nobody would look at twice. When a result is weird, don't just investigate the model — walk back through how the data got there.</p>
+<p><strong>3. Write the test that makes your fix permanent.</strong> A fix you can't detect regressing isn't a fix. And construct the test so it can't pass for the wrong reason — mine interleaves plateau and slope cells in space precisely so that distance can't accidentally do band-matching's job.</p>
+<p><strong>4. Measure your excuses.</strong> "Not enough data" became a learning curve that told me exactly what more data was worth — and that I should stop asking for it and go after predictor resolution instead.</p>
+<p>The elevation confounder is the one I keep thinking about. It would have shipped. It produced a plausible chart, respectable metrics, and a model that had learned to recognise Tibet.</p>
+<p>The only reason I caught it is that the magnitude felt wrong and I went looking. That's not a process. That's luck plus suspicion.</p>
+<p>So now I write the test.</p>
+<hr />
+<p><em>Slopewatch is built for SIH 2026, Problem Statement 26192, on public data: the NASA Global Landslide Catalog, Open-Meteo's ERA5-Land archive, Copernicus DEM, and OpenStreetMap. The full technical walkthrough — twenty sections, eighteen diagrams, and every number traced to a committed artefact — lives in the <a href="https://github.com/CHAITANYA-2002/imarticus/tree/main/imarticus%20projects/Capstone%201">repository README</a>.</em></p>
+<p><em>Every figure in this post is generated by a script that verifies it reproduces the metric it illustrates before drawing it. A figure that can't reproduce its own number is worse than no figure.</em></p>
+</article>
+<script>
+const status = document.getElementById('status');
+function say(msg) { status.textContent = msg; }
+function selectNode(node) {
+  const r = document.createRange(); r.selectNodeContents(node);
+  const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+}
+async function copyRich(node, label) {
+  const html = node.innerHTML, text = node.innerText;
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], {type: 'text/html'}),
+      'text/plain': new Blob([text], {type: 'text/plain'}),
+    })]);
+    say(label + ' copied. Paste it into Medium.');
+    return;
+  } catch (e) { /* fall back to a selection copy */ }
+  selectNode(node);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) {}
+  if (ok) { window.getSelection().removeAllRanges(); say(label + ' copied. Paste it into Medium.'); }
+  else say(label + ' is selected. Press Ctrl+C (Cmd+C on Mac) to copy it.');
+}
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
+  const el = document.getElementById(b.dataset.copy);
+  copyRich(el, b.textContent.replace('Copy ', '').replace(/^./, c => c.toUpperCase()));
+}));
+document.getElementById('copyArticle').addEventListener('click', () => copyRich(document.getElementById('article'), 'Article'));
+</script>
+</body>
+</html>

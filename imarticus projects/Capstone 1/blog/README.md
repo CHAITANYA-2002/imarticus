@@ -13,6 +13,10 @@ The Slopewatch write-up, in the two forms it needs to exist in.
 
 ## Publishing to Medium
 
+**Recommended: the paste kit.** Open `medium-paste.html` in a browser and follow its five steps. It copies the title, subtitle and article as rich text. Headings, bold, code and all 15 images come through, and the three tables are pre-rendered as `images/table-0N.png` because Medium has no tables. Rebuild it after editing the post with `python blog/_build_medium_paste.py` (add `--ref <branch>` if the images aren't on `main` yet).
+
+### Older routes
+
 Medium does not import Markdown files directly. Two routes, in order of preference:
 
 **1. Import from GitHub (keeps images automatically).**
