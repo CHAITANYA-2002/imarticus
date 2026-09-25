@@ -10,6 +10,7 @@ GitHub URLs, so Medium can fetch and rehost them during the paste.
 Needs: markdown, playwright (and a Chromium; /opt/pw-browsers is used if present).
 """
 import argparse
+import hashlib
 import html
 import re
 from pathlib import Path
@@ -102,7 +103,10 @@ def build(ref, skip_render, embed_to=None):
             # e.g. app screenshots that have to be taken on a machine running the warehouse
             missing.append(name)
             return ""
-        return figure(src, alt)
+        # A content fingerprint in the URL, so a redrawn image never comes back
+        # from a CDN or Medium cache under the old address.
+        digest = hashlib.md5((IMAGES / name).read_bytes()).hexdigest()[:10]
+        return figure(f"{src}?v={digest}", alt)
 
     body = re.sub(r'<p><img alt="([^"]*)" src="([^"]*)" ?/?></p>', img_to_figure, body)
 
