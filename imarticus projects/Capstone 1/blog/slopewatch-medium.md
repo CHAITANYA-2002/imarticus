@@ -224,7 +224,7 @@ I tested it two ways. **On time:** train on 2007–2013, tune on 2014, then test
 
 ![Scores on regions the model never trained on, against the future-years test (orange line).](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/chart-region_generalisation.png)
 
-Three of the four regions score close to or above the future-years test. That suggests it learned *conditions*, not *places*. The North East is weakest, and that's the next thing to work on.
+Three of the four regions score close to or above the future-years test. That suggests it learned *conditions*, not *places*. The North East is the weakest of the four.
 
 ![The final numbers, on the held-out test years.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/table-03.png)
 
@@ -247,6 +247,15 @@ What it can't see is the final burst that tips a soaked slope over.
 **Unreported landslides can't be fully fixed.** The exclusion zone helps; nothing removes the problem entirely.
 
 **It is not an official warning system.** No hourly forecasts, no validation against government bulletins, no human in the loop. It's a prototype that ranks slopes for inspection, and the app says so on every screen.
+
+---
+
+## What's next
+
+- **Race it against a plain rainfall rule.** Landslide scientists have long ranked slopes simply by how much it has rained. Beating random guessing is one bar; beating that rule is the one that really justifies a model. The comparison is now built into the pipeline, scored on the same test years, and its result is the next thing I'll publish.
+- **Hourly rainfall.** The single biggest lever on accuracy, for the reason above.
+- **The North East.** It's the weakest region, and the one I most want to improve.
+- **An online demo,** so anyone can click around the map instead of reading about it.
 
 ---
 

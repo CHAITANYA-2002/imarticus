@@ -50,7 +50,7 @@ hr.kitline { border:0; border-top:1px solid var(--line); margin:22px 0 0; }
   <div class="row"><div class="txt"><div class="lbl">Subtitle</div><div id="s">Slopewatch ranks slopes across the Indian Himalaya by daily landslide risk, using only public data. Here&#x27;s how it works, what it achieves, and the bug I caught before it could fool anyone.</div></div><button data-copy="s">Copy subtitle</button></div>
   <button class="big" id="copyArticle">Copy article</button>
   <div class="status" id="status" role="status"></div>
-  <p class="checks">After pasting, check for <b>28 images</b> and <b>14 section headings</b>.
+  <p class="checks">After pasting, check for <b>28 images</b> and <b>15 section headings</b>.
   Suggested topics: Machine Learning, Data Science, Artificial Intelligence, Climate, Python.</p>
   <hr class="kitline">
 </div>
@@ -178,7 +178,7 @@ hr.kitline { border:0; border-top:1px solid var(--line); margin:22px 0 0; }
 <p>I tested it two ways. <strong>On time:</strong> train on 2007–2013, tune on 2014, then test on 2015–2016, which it had never seen. <strong>On place:</strong> remove a whole region, train on the rest, and test on the region it never visited.</p>
 <figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/diagram-09-validation-design-a-chronological-train.png" alt="Testing on future years, and on whole regions left out of training."><figcaption>Testing on future years, and on whole regions left out of training.</figcaption></figure>
 <figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/chart-region_generalisation.png" alt="Scores on regions the model never trained on, against the future-years test (orange line)."><figcaption>Scores on regions the model never trained on, against the future-years test (orange line).</figcaption></figure>
-<p>Three of the four regions score close to or above the future-years test. That suggests it learned <em>conditions</em>, not <em>places</em>. The North East is weakest, and that's the next thing to work on.</p>
+<p>Three of the four regions score close to or above the future-years test. That suggests it learned <em>conditions</em>, not <em>places</em>. The North East is the weakest of the four.</p>
 <figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/table-03.png" alt="The final numbers, on the held-out test years."><figcaption>The final numbers, on the held-out test years.</figcaption></figure>
 <p><strong>In one line: check the top 10% of squares and you reach 28.7% of the landslides, nearly three times the 10% you'd reach at random.</strong> At a 5% budget it's 2.6 times random; at 20% it's 2.3 times. On the stricter all-thresholds measure it's 1.45 times better than guessing, and I'd rather state that plainly too. The main ceiling is the rainfall data, not the method, which is the next section.</p>
 <hr />
@@ -190,6 +190,14 @@ hr.kitline { border:0; border-top:1px solid var(--line); margin:22px 0 0; }
 <p><strong>Each square is 11 km wide.</strong> Mountain rain can change within a kilometre, so the rain that caused a slide may not show up in its square.</p>
 <p><strong>Unreported landslides can't be fully fixed.</strong> The exclusion zone helps; nothing removes the problem entirely.</p>
 <p><strong>It is not an official warning system.</strong> No hourly forecasts, no validation against government bulletins, no human in the loop. It's a prototype that ranks slopes for inspection, and the app says so on every screen.</p>
+<hr />
+<h2>What's next</h2>
+<ul>
+<li><strong>Race it against a plain rainfall rule.</strong> Landslide scientists have long ranked slopes simply by how much it has rained. Beating random guessing is one bar; beating that rule is the one that really justifies a model. The comparison is now built into the pipeline, scored on the same test years, and its result is the next thing I'll publish.</li>
+<li><strong>Hourly rainfall.</strong> The single biggest lever on accuracy, for the reason above.</li>
+<li><strong>The North East.</strong> It's the weakest region, and the one I most want to improve.</li>
+<li><strong>An online demo,</strong> so anyone can click around the map instead of reading about it.</li>
+</ul>
 <hr />
 <h2>What I'd tell you</h2>
 <figure><img src="https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/refs/heads/claude/awesome-pascal-ltb1d4/imarticus%20projects/Capstone%201/blog/images/card-lessons.png" alt="Four lessons from building Slopewatch."><figcaption>Four lessons from building Slopewatch.</figcaption></figure>
