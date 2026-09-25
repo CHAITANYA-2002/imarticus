@@ -2,7 +2,7 @@
 
 ### Slopewatch ranks slopes across the Indian Himalaya by daily landslide risk, using only public data. Here's how it works, what it achieves, and the bug I caught before it could fool anyone.
 
-![Check 10% of slopes, reach 29% of landslides: nearly three times better than inspecting at random.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/card-cover.png)
+![Check just 10% of Himalayan slopes and catch 2.9 times as many landslides as random inspection would.](https://raw.githubusercontent.com/CHAITANYA-2002/imarticus/main/imarticus%20projects/Capstone%201/blog/images/card-cover.png)
 
 Every monsoon the news from the hills looks the same. A slope in Uttarakhand gives way. A highway in Himachal disappears under mud. A village in the North East is cut off for days. And afterwards, someone always asks: *could we have seen it coming?*
 

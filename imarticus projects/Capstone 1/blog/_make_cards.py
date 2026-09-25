@@ -24,15 +24,19 @@ CONTOURS = "".join(
     for i in range(14)
 )
 
+# Built to survive Medium's preview crop (roughly 2.2:1, shown ~480px wide):
+# one big number, one short line, everything inside the vertical middle.
 COVER = BASE + f"""
 <div class="card" style="height:788px;background:#16242a;position:relative;overflow:hidden;">
   <svg width="1400" height="788" style="position:absolute;inset:0">{CONTOURS}</svg>
-  <div style="position:absolute;left:96px;top:150px;width:1240px;">
-    <div class="sans" style="color:#e8b04b;font-size:22px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;">Slopewatch · Himalayan landslide early warning</div>
-    <div style="color:#fff;font-size:88px;line-height:1.06;margin-top:34px;font-weight:700;">Check 10% of slopes.</div>
-    <div style="color:#e8b04b;font-size:88px;line-height:1.06;font-weight:700;">Reach 29% of landslides.</div>
-    <div class="sans" style="color:#c9d6d9;font-size:28px;line-height:1.45;margin-top:40px;width:800px;">
-      Nearly 3× better than inspecting at random, built entirely from public rainfall and terrain data.</div>
+  <div class="sans" style="position:absolute;left:96px;top:196px;color:#e8b04b;font-size:26px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;">Slopewatch</div>
+  <div style="position:absolute;left:84px;top:236px;display:flex;align-items:center;gap:44px;">
+    <div style="color:#e8b04b;font-size:250px;line-height:1;font-weight:700;letter-spacing:-6px;">2.9×</div>
+    <div>
+      <div style="color:#fff;font-size:76px;line-height:1.05;font-weight:700;">the landslides<br>caught</div>
+      <div class="sans" style="color:#c9d6d9;font-size:32px;line-height:1.35;margin-top:22px;width:640px;">
+        vs. random inspection, checking just 10% of Himalayan slopes with public data</div>
+    </div>
   </div>
 </div>
 """
