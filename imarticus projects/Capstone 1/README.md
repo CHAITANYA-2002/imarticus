@@ -81,6 +81,7 @@ The critical path is 00 → 03 → 04 → 05 → 06 → 07. Stage 05 is the long
 | 13 | `13_learning_curve.py` | how much more data is worth | 1–2 |
 | 14 | `14_report_figures.py` | the figures in this README | <1 |
 | 15 | `15_extract_diagrams.py` | the diagrams in this README | <1 |
+| 16 | `16_rainfall_baseline.py` | the model against a plain rainfall-ranking rule | <1 |
 
 ---
 
@@ -593,6 +594,7 @@ The risk map now serves output from the clean model. It previously held 200 rows
 .venv/Scripts/python.exe scripts/08_score.py
 .venv/Scripts/python.exe scripts/10_verify.py
 .venv/Scripts/python.exe scripts/13_learning_curve.py
+.venv/Scripts/python.exe scripts/16_rainfall_baseline.py
 ```
 
 ---
