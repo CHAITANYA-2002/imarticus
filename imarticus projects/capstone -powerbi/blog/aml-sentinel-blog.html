@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which 0.1% Would You Open First?</title>
+<style>
+  body { margin: 0; background: #faf8f3; color: #14213d; font: 19px/1.7 Georgia, "Times New Roman", serif; }
+  article { max-width: 44rem; margin: 0 auto; padding: 48px 20px 96px; }
+  h1 { font: 700 42px/1.15 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0 0 14px; }
+  h2 { font: 700 27px/1.25 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 56px 0 12px; }
+  h3 { font: 700 21px/1.3 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 34px 0 8px; }
+  .deck { font-size: 22px; color: #4a5568; margin: 0 0 34px; }
+  figure { margin: 32px 0; }
+  img { max-width: 100%; height: auto; display: block; border-radius: 6px; }
+  figcaption { font-size: 15px; color: #6b7280; text-align: center; margin-top: 8px; font-style: italic; }
+  blockquote { margin: 28px 0; padding: 4px 0 4px 22px; border-left: 4px solid #a9791c; font-size: 22px; font-style: italic; color: #2b3a55; }
+  code { font: 15px Consolas, Menlo, monospace; background: #eef1f6; padding: 1px 6px; border-radius: 4px; }
+  pre { background: #14213d; color: #f3e7c9; padding: 16px 18px; border-radius: 8px; overflow-x: auto; font: 14.5px/1.55 Consolas, Menlo, monospace; }
+  pre code { background: none; padding: 0; color: inherit; }
+  hr { border: 0; text-align: center; margin: 44px 0; }
+  hr::before { content: "* * *"; color: #a9791c; letter-spacing: 12px; }
+  li { margin: 6px 0; }
+</style>
+</head>
+<body>
+<article>
+
+<h1>Which 0.1% Would You Open First?</h1>
+<p class="deck">How I ranked five million payments so a fixed anti-money-laundering team finds 39 times more cases with the same people and the same hours, and the four times the numbers tried to fool me along the way.</p>
+
+<p>Picture a small financial-crime team at a bank. Every day roughly <strong>450,000 payments</strong> flow through the books. Somewhere in there, a few hundred of them are money laundering: dirty money being moved, split and passed along until it looks clean.</p>
+
+<p>The team can properly review about <strong>500 payments a day</strong>. That is 0.11% of the day. Everything else goes unread.</p>
+
+<p>So the real question is not "can we find laundering?" It is much more specific, and much harder:</p>
+
+<blockquote>Which 500 payments should a fixed team open first, every single day?</blockquote>
+
+<p>That question became my capstone project, AML Sentinel. This post walks through what I built, from raw CSV files to a Power BI dashboard, and the decisions that mattered. It is written for two readers at once: if you are new to data, the plain-language parts tell the story; if you are technical, the details are there for you to check.</p>
+
+<h2>The data: five million payments with the answers attached</h2>
+
+<p>Real bank transaction data is almost impossible to get, for good reasons: privacy and regulation. And even if you got it, the labels would be incomplete, because a bank only knows about the laundering it caught.</p>
+
+<p>So I used <strong>IBM's AMLworld dataset</strong> (the HI-Small variant, published on Kaggle). IBM built a simulator in which people, companies and banks pay each other, and some of them deliberately launder money. Because it is simulated, every payment carries the true answer: laundering or not.</p>
+
+<ul>
+  <li><strong>5,078,345</strong> payments over <strong>18 days</strong> (1 to 18 September 2022)</li>
+  <li><strong>5,177</strong> labelled as laundering: <strong>0.1019%</strong>, roughly 1 in every 981 payments</li>
+  <li><strong>7</strong> payment channels (ACH, Cheque, Credit Card, Cash, Wire, Reinvestment, Bitcoin)</li>
+  <li><strong>15</strong> currencies, from US Dollars to Yen to Bitcoin</li>
+  <li><strong>370</strong> labelled laundering networks, each tagged with one of 8 shapes</li>
+</ul>
+
+<p>Two rules shaped everything after this.</p>
+
+<p><strong>First, I never say "detected".</strong> The label is IBM's ground truth on synthetic data, not the result of an investigation. Every rate in this project is "the share of payments the benchmark labels as laundering".</p>
+
+<p><strong>Second, I never add up money.</strong> The amounts are in 15 currencies and the data has no exchange rates. A sum of Yen and Dollars is not a number. So every result in this project is a count, a rate, or analyst time, and no money total appears anywhere.</p>
+
+<h2>The pipeline</h2>
+
+<figure>
+  <img src="images/01_pipeline.png" alt="Pipeline from raw data through SQLite, SQL marts and Python to Power BI">
+  <figcaption>Five stages. Each one hands a checked output to the next.</figcaption>
+</figure>
+
+<p>The raw files went into <strong>SQLite</strong>, where I cleaned and enriched them. From there I built <strong>marts</strong>: small summary tables that each answer one business question, such as "what is the laundering rate per channel, per hour?". <strong>Python</strong> did the analysis and the model. <strong>Power BI</strong> turned it into a 13-page story.</p>
+
+<h3>Three defects that would have broken everything silently</h3>
+
+<p>None of these threw an error. All three would have produced wrong answers that looked right.</p>
+
+<ol>
+  <li><strong>Two columns called "Account".</strong> The sender's account and the receiver's account share the same header. A naive reader merges them. I renamed them <code>from_account_id</code> and <code>to_account_id</code> on load.</li>
+  <li><strong>Bank IDs padded differently.</strong> The transaction file writes bank 10 as both "010" and "0010"; the account file writes "10". The join between payments and banks matched <em>nothing</em>, and 58 banks were split into two. I normalised every ID into one canonical key: 30,528 raw spellings became 30,470 real banks.</li>
+  <li><strong>A labelled tail.</strong> The last eight days (11 to 18 September) hold only 1,108 payments, and 655 of them are laundering: 59%, against 0.1% everywhere else. That is not a normal day. I kept these rows in whole-period counts but excluded them from the model and from time-of-day charts.</li>
+</ol>
+
+<p>To make sure nothing like this slipped through again, I wrote <strong>37 data-quality gates</strong>. Each one has an expected value written down in advance: row counts survive every step, labels total 5,177, every bank key resolves, every mart reconciles back to the source. If a single gate fails, the pipeline stops. All 37 pass.</p>
+
+<h2>What the data says</h2>
+
+<h3>One channel carries almost the whole problem</h3>
+
+<figure>
+  <img src="images/02_channels.png" alt="Bar chart: ACH is 11.8% of payments and 86.6% of labelled laundering">
+  <figcaption>Grey is each channel's share of payments; red is its share of labelled laundering.</figcaption>
+</figure>
+
+<p>This was the biggest finding of the project. <strong>ACH</strong> (automated bank transfers) is 11.83% of all payments but holds <strong>86.59%</strong> of the labelled laundering. Its labelled rate is 0.7462%, about 7 times the portfolio average. Cheque, the busiest channel at 37% of volume, carries just 6%.</p>
+
+<p>A quick note on two numbers that sound alike but answer different questions. A <strong>share</strong> tells you how much of the whole problem sits here (86.59%). A <strong>rate</strong> tells you how risky each payment in this channel is (0.7462%). You need both.</p>
+
+<h3>Inside ACH, the time of day matters</h3>
+
+<figure>
+  <img src="images/03_ach_by_hour.png" alt="Column chart of ACH labelled rate by hour, peaking at midday">
+  <figcaption>Rates, not counts: more payments happen at midday anyway, so a count chart would just show volume.</figcaption>
+</figure>
+
+<p>Within ACH, the labelled rate around midday is about <strong>3.5 times</strong> the rate at midnight (1 to 10 September only, because the labelled tail is all ACH and would distort exactly these hours).</p>
+
+<h3>Crossing a border triples the rate</h3>
+
+<figure>
+  <img src="images/04_cross_border.png" alt="Three bars: same country 0.0435%, two countries 0.1444%, country to unclassified 0.3870%">
+  <figcaption>The third bar is the highest, but it cannot be called cross-border: one side has no country at all.</figcaption>
+</figure>
+
+<p>I read each bank's country from its name ("Portugal Bank #4507" means Portugal). Payments between two different real countries are labelled at <strong>0.1444%</strong>, against 0.0435% within one country: <strong>3.3 times</strong> higher.</p>
+
+<p>One subtlety I had to correct mid-project: about a third of banks have no country in their name. My first version treated those as domestic, which inflated the cross-border multiple. Now that flag has three values (cross-border, domestic, and <em>unclassified</em>), and the unclassified group is shown on its own.</p>
+
+<h3>Where almost nothing happens</h3>
+
+<p>Just as useful as "where to look" is "where you can look less". <strong>Wire, Reinvestment and self-transfers</strong> make up 15.01% of all payments and carry only <strong>11</strong> labelled cases between them. Wire and Reinvestment alone: 652,911 payments, zero labelled.</p>
+
+<h3>Launderers work in networks</h3>
+
+<figure>
+  <img src="images/05_typologies.png" alt="Bar chart of 370 laundering networks across 8 typologies">
+  <figcaption>Cycle has the most networks; Gather-Scatter has the most payments, about 14 per network.</figcaption>
+</figure>
+
+<p>Using <code>networkx</code>, I rebuilt each of the 370 labelled networks as a graph. Depending on its shape, a network spans 5 to 16 accounts on average, and 99 of them contain a closed loop, where money travels around and comes back to where it started. These networks cover 3,209 payments, 61.99% of all labels. The lesson for an investigator: review the network, not just the single payment.</p>
+
+<h2>Before the model: build something to beat</h2>
+
+<p>"The model found 509 cases" means nothing on its own. 70 marks sounds great until you learn the class average was 90. So before training anything, I built three simple ways to pick 1,500 alerts (500 a day over the 3 test days):</p>
+
+<ul>
+  <li><strong>Random review:</strong> pick blindly. On average this finds 1,500 &times; 0.1111% = <strong>1.7</strong> cases. It is the floor.</li>
+  <li><strong>Account rule:</strong> a textbook AML checklist. Eleven red flags per account (money passes straight through, pays 20+ people, bursts of 5+ payments an hour, amounts just under the US $10,000 reporting limit, and so on), up to 16 points.</li>
+  <li><strong>Expert rule:</strong> a transparent points system built from <em>my own</em> findings, using only the first seven days as evidence. ACH +4 (40 times riskier in training), business sender +2, different jurisdictions +2, different bank +1, large amount for its currency +2, Wire or Reinvestment &minus;6, paying yourself &minus;4.</li>
+</ul>
+
+<p>The textbook account rule found <strong>zero</strong>. Not "few". Zero, below random. The reason taught me more than the result: big institutional accounts pay thousands of people all day, so they trip almost every red flag. Ranking payments by their sender's account score fills the entire review budget with one bank's routine traffic before reaching a single suspicious payment.</p>
+
+<blockquote>A checklist copied without testing it against your own data can be worse than no rules at all.</blockquote>
+
+<p>The expert rule, built from the data in front of me, found <strong>13</strong>. That is the honest baseline the model has to beat.</p>
+
+<h2>Teaching the model</h2>
+
+<p>The model's job is simple to describe: look at old payments marked "laundering" or "normal", learn the pattern, then give every new payment a risk score. The team opens the highest scores first.</p>
+
+<h3>Study days and exam days</h3>
+
+<p>I split the data <strong>by date</strong>, not at random. The model learns from 1 to 7 September and is tested on 8 to 10 September, three complete days it has never seen: 1,345,565 payments, 1,495 of them labelled.</p>
+
+<p>Think of it as studying old questions and then sitting an exam with new ones. A random split would be like seeing the exam paper in advance: the model would learn from the future and the score would be fake. A bank works the same way: it learns from yesterday and scores today.</p>
+
+<h3>23 inputs, and only the past</h3>
+
+<p>Every payment is described by 23 inputs in four groups:</p>
+
+<ul>
+  <li><strong>The payment itself (5):</strong> channel, payment currency, receiving currency, hour of day, and the log of the amount.</li>
+  <li><strong>Warning-sign flags (5):</strong> cross-currency, self-transfer, between two banks, a US Dollar payment just under 10,000, a round amount with no cents.</li>
+  <li><strong>Who is involved (4):</strong> sending and receiving country, sender and receiver entity type (Corporation, Partnership, and so on).</li>
+  <li><strong>Behaviour history (9):</strong> how many payments the sender made before, how many different people they paid, what share of their past payments were ACH, their busiest hour; how many payments the receiver got, from how many people, and how much of what came in they passed straight on.</li>
+</ul>
+
+<p>The history inputs follow one strict rule: <strong>only payments before this one count</strong>. For a payment at 2 pm on 5 September, the sender's history is built from everything up to 2 pm on 5 September and nothing after. That holds for training and test alike, because when a real payment arrives, the bank does not know the future.</p>
+
+<h3>Laundering is rare, so I rebalanced the study material</h3>
+
+<p>Imagine 1,000 photos with one cat in them. A model that answers "no cat" every time is 99.9% right and never finds the cat. To give the model enough examples, I kept <strong>every</strong> laundering payment from the training week but only <strong>1 in 50</strong> normal ones, which lifts the training share of laundering from about 1 in 1,000 to about 4 in 100.</p>
+
+<p>Two consequences I kept track of. I did not also add class weights, which would correct the imbalance twice. And the output is now a <em>ranking score</em>, not a calibrated probability, which is fine, because the team only needs the order.</p>
+
+<h3>Two models</h3>
+
+<p>A <strong>logistic regression</strong> as a simple yardstick, and a <strong>gradient-boosting</strong> model (scikit-learn's <code>HistGradientBoostingClassifier</code>): many small decision trees, each one correcting the mistakes of the ones before. Gradient boosting can catch combinations, like "ACH plus a business sender plus a large amount". I used standard settings (learning rate 0.08, 31 leaves, up to 300 trees with early stopping) and did no hyperparameter tuning, so the result is not a lucky search.</p>
+
+<h2>Choosing the right yardstick</h2>
+
+<p>This is the part I would most like other beginners to take away.</p>
+
+<p><strong>Accuracy is useless here.</strong> A model that says "everything is normal" scores 99.89% accuracy on the test days and catches nothing.</p>
+
+<p><strong>ROC-AUC flatters.</strong> My model scores 0.977 on ROC-AUC, which looks almost perfect. Yet over its first 1,500 alerts, two thirds are false alarms. ROC divides false alarms by the number of normal payments, and with 1.34 million normal payments, 991 false alarms look like 0.07%. The metric simply does not see the wasted work.</p>
+
+<p><strong>PR-AUC tells the truth.</strong> The precision-recall curve asks, all the way down the ranked list: of the alerts opened so far, how many are real (precision), and how much of the laundering have we found (recall)? True negatives do not appear in either formula, so the mass of easy, obviously normal payments cannot inflate it. A random list scores the laundering rate itself, 0.0011.</p>
+
+<figure>
+  <img src="images/06_pr_curve.png" alt="Precision-recall curve of the model against a random baseline">
+  <figcaption>PR-AUC 0.30 against 0.0011 for a random list: about 270 times better than chance.</figcaption>
+</figure>
+
+<p>Gradient boosting scores a PR-AUC of <strong>0.2982</strong>. The logistic yardstick scores 0.0261. For the operational view I also track precision in the top-k alerts, which is what the team actually feels.</p>
+
+<h2>The result</h2>
+
+<figure>
+  <img src="images/07_top_k.png" alt="Precision as the team works down the model's alert list">
+  <figcaption>Of the model's top 100 alerts, 92 are real. At the team's 3-day budget of 1,500, it is 509.</figcaption>
+</figure>
+
+<p>Walk down the model's list from the top and the first alerts are almost all real: <strong>92 of the top 100</strong>, a lift of 828 times over random. Precision falls as you go deeper, which is exactly what a good ranking should do: 320 of the top 500, 437 of the top 1,000, and <strong>509 of the top 1,500</strong>.</p>
+
+<p>Every one of those 509 is an ACH payment. The model rediscovered the biggest finding of the analysis on its own.</p>
+
+<figure>
+  <img src="images/08_deciles.png" alt="Share of test laundering by model score decile">
+  <figcaption>Cut the 1.35 million test payments into ten equal bands by score: the top band holds 92.4% of the laundering.</figcaption>
+</figure>
+
+<h2>Four times the numbers tried to fool me</h2>
+
+<h3>1. The trimmed exam</h3>
+
+<p>My first evaluation trimmed the test set the same way as the training set: every laundering payment, plus a slice of normal ones. It is a common shortcut, because it makes evaluation fast. It also inflates the score.</p>
+
+<figure>
+  <img src="images/10_sampling_trap.png" alt="PR-AUC 0.30 on the full test against 0.78 on a trimmed test">
+  <figcaption>Same model, same scores. Trimming the test raised the laundering share 43-fold and the PR-AUC 2.6-fold.</figcaption>
+</figure>
+
+<p>On the trimmed test the same scores read <strong>0.78</strong>. On the real test, every payment at its true rate, they read <strong>0.30</strong>. A bank cannot trim its normal payments, so the exam must not either. Since then, the test set is never sampled.</p>
+
+<h3>2. The leak that made the model worse, not better</h3>
+
+<p>In my first version, the training rows' history inputs were built from the whole training week, including the payment itself and later ones, while the test rows only saw the past. Training and test inputs meant different things. When I made every input strictly point-in-time, the PR-AUC jumped from 0.11 to 0.30 and top-100 precision from 59% to 92%.</p>
+
+<p>A jump that size demands proof that nothing is leaking. So I ran three checks:</p>
+
+<figure>
+  <img src="images/11_leakage_controls.png" alt="PR-AUC for main model, shuffled labels, earlier split and frozen history">
+  <figcaption>Shuffled labels collapse to chance; two different set-ups both hold at 0.26.</figcaption>
+</figure>
+
+<ul>
+  <li><strong>Shuffle the answers</strong> and train again: PR-AUC 0.0014, the same as guessing. Nothing in the inputs secretly carries the label.</li>
+  <li><strong>Different dates</strong> (learn 1 to 5 September, test 6 to 7): PR-AUC 0.26, top-100 precision 89%. Not one window's luck.</li>
+  <li><strong>Freeze the test history</strong> at 7 September: still 0.26. The gain comes from consistent inputs, not from test-period history.</li>
+</ul>
+
+<h3>3. The tie-breaker</h3>
+
+<p>Rule queues give many payments the same score, so the order among ties matters. My first version broke ties by amount, which in a 15-currency book puts Rupee and Ruble payments first simply because their numbers are bigger. I switched to first-in, first-out (the earlier payment first, the way a real team works a queue) and, at the same time, made the rule take its evidence from the training week only. Together those two fixes took the expert rule from 38 cases to 13. The old number was partly an artefact of ordering.</p>
+
+<h3>4. The lucky draw</h3>
+
+<p>An early random baseline reported 3 cases. That was one lucky draw: picking 1,500 payments at random can give anywhere from 0 to 5 by chance. The fair baseline is the expected value, 1.7.</p>
+
+<h2>What it is worth: same team, 39 times more</h2>
+
+<p>Scores mean little to a bank manager. Cases caught and hours spent do. Every queue gets the same budget: 500 alerts a day for 3 days, so 1,500 alerts.</p>
+
+<figure>
+  <img src="images/12_cases_by_policy.png" alt="Cases found in 1,500 alerts: model 509, expert rule 13, random 1.7, account rule 0">
+  <figcaption>509 &divide; 13 = 39 times the best rule.</figcaption>
+</figure>
+
+<p>Now the time. I assumed 20 minutes to review one alert and 6 productive hours per analyst per day. Then 500 alerts a day need about <strong>28 analysts</strong>, and 1,500 alerts cost <strong>500 analyst hours</strong>, whichever queue you use. The difference is what those hours buy.</p>
+
+<figure>
+  <img src="images/13_hours_per_case.png" alt="Analyst hours per labelled case: model 1, expert rule 38.5, random 300">
+  <figcaption>500 hours &divide; cases found. The model does not review faster; it chooses better.</figcaption>
+</figure>
+
+<ul>
+  <li><strong>Model:</strong> 500 &divide; 509 = about <strong>1 hour</strong> per case</li>
+  <li><strong>Expert rule:</strong> 500 &divide; 13 = <strong>38.5 hours</strong> per case</li>
+  <li><strong>Random:</strong> 500 &divide; 1.7 = <strong>300 hours</strong> per case</li>
+</ul>
+
+<p>The 20-minute figure is an assumption, not a measurement. But it applies to every queue equally, so if reviews really take 30 minutes, every number grows by half and the 39-times gap stays exactly the same.</p>
+
+<h2>Why the model flags what it flags</h2>
+
+<p>A bank cannot act on a black box, and a regulator will ask why a payment was flagged. So I measured <strong>permutation importance</strong>: shuffle one input on the full test set and see how far the PR-AUC falls. The bigger the fall, the more the model relies on it.</p>
+
+<figure>
+  <img src="images/09_feature_importance.png" alt="Ten most important model inputs">
+  <figcaption>Channel, amount and sending country lead: the same things the analysis found by hand.</figcaption>
+</figure>
+
+<p>Payment channel, amount, sending country, the sender's past number of counterparties and the sender's past ACH share lead the list. That is reassuring: the model is learning the patterns the exploration found, not a trick.</p>
+
+<h2>The dashboard</h2>
+
+<figure>
+  <img src="images/14_dashboard_channels.png" alt="Power BI page showing ACH share of volume and laundering, ACH by hour and a channel-by-hour heatmap">
+  <figcaption>Page 04 of the Power BI report: one claim per page, with the proof underneath.</figcaption>
+</figure>
+
+<p>The Power BI report has a Home page and 12 story pages, one per slide of the talk, each headed by the claim it proves. Underneath sit 24 tables (5 lookup tables at the centre of a star schema, 12 feed tables linked to them through 20 relationships, and 7 standalone results tables) and 56 DAX measures.</p>
+
+<p>Two rules held across every measure:</p>
+
+<ul>
+  <li><strong>Rates are always re-divided from counts</strong> (<code>DIVIDE(labelled, transactions)</code>), never an average of stored percentages. Averaging rates would weight a 12-payment corridor the same as a 300,000-payment one.</li>
+  <li><strong>No amount ever crosses a currency.</strong> Cost is analyst time.</li>
+</ul>
+
+<p>The report is stored as a Power BI Project (PBIP), so the model and every page are plain text files. Pages, measures and model columns are generated by scripts, which means a changed number is a re-run, not an afternoon of clicking through 500 visuals.</p>
+
+<h2>What this project does not claim</h2>
+
+<p>I would rather say these before anyone asks:</p>
+
+<ul>
+  <li><strong>The data is synthetic.</strong> Nothing here transfers to a live portfolio without validation, explainability review and human oversight.</li>
+  <li><strong>92% is the top 100 only.</strong> Across all 1,500 alerts precision is 34%, and at this capacity about two thirds of the labelled laundering is still missed.</li>
+  <li><strong>The staffing figures are assumptions</strong>, stated in the code and printed on every run.</li>
+  <li><strong>The rules are baselines, not tuned competitors.</strong> Tuning them would turn them into small models.</li>
+  <li><strong>Untried:</strong> XGBoost, LightGBM and hyperparameter tuning. A trailing-window version of the history inputs is the next improvement.</li>
+</ul>
+
+<h2>Three actions</h2>
+
+<ol>
+  <li><strong>Route ACH to its own queue,</strong> business senders first: 11.8% of volume, 86.6% of labelled cases.</li>
+  <li><strong>Move Wire, Reinvestment and self-transfers to a lighter tier:</strong> 15.01% of volume, 11 labelled cases. Watch the cases found there, and move them back if that number rises.</li>
+  <li><strong>Rank the review queue with the model:</strong> 509 labelled cases in 1,500 alerts, against 13 for the best rule, at about 1 analyst hour per case instead of 38.5.</li>
+</ol>
+
+<hr>
+
+<h2>What I learned</h2>
+
+<ul>
+  <li><strong>The metric comes from the problem, not the model.</strong> A team works a ranked list from the top, so ranking metrics; laundering is rare, so PR-AUC over ROC-AUC; capacity is fixed, so precision in the top k.</li>
+  <li><strong>Build the baseline first.</strong> Without the expert rule, "509" would have been a number with nothing to stand against.</li>
+  <li><strong>The dangerous bugs do not crash.</strong> A broken join, a trimmed test set and a leaky feature all produced plausible numbers. Expected values written down in advance, and a pipeline that stops when they are not met, caught them.</li>
+  <li><strong>A big improvement needs more proof, not less.</strong> The jump from 0.11 to 0.30 was the moment to go looking for a leak.</li>
+</ul>
+
+<p>The question I started with was "which 0.1% would you open first?". The answer, at least on this data, is: the ACH payments the model ranks highest. With the same people and the same hours, that finds 39 times what the best simple rule finds.</p>
+
+<p><em>Built with SQLite, Python (pandas, scikit-learn, networkx) and Power BI, on IBM's AMLworld HI-Small dataset. All figures in this post are drawn from the project's own outputs.</em></p>
+
+</article>
+</body>
+</html>
