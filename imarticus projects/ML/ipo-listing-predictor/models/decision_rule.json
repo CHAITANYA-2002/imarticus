@@ -1,0 +1,7 @@
+{
+  "model_threshold": -2.0,
+  "lookup_threshold": -10.0,
+  "subscription_cutoff": 0.0,
+  "picked_on": "2019-2023",
+  "lot_value": 15000
+}

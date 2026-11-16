@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Data is re-downloadable from its sources (see SOURCES.md); keep it out of git.
+data/raw/
+data/interim/
+data/processed/
+models/*.pkl

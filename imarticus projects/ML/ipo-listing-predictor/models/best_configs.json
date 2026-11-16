@@ -1,0 +1,46 @@
+{
+  "median": {
+    "params": {},
+    "data": {},
+    "cv_mae": 26.74290094740631
+  },
+  "bucket_median": {
+    "params": {},
+    "data": {},
+    "cv_mae": 17.206283925529473
+  },
+  "ridge": {
+    "params": {
+      "alpha": 30
+    },
+    "data": {
+      "features": "base",
+      "half_life": null
+    },
+    "cv_mae": 18.71288394754566
+  },
+  "random_forest": {
+    "params": {
+      "max_depth": 8,
+      "min_samples_leaf": 5
+    },
+    "data": {
+      "features": "base",
+      "half_life": null
+    },
+    "cv_mae": 16.033660459424635
+  },
+  "lightgbm": {
+    "params": {
+      "n_estimators": 200,
+      "num_leaves": 15,
+      "min_child_samples": 25,
+      "objective": "l2"
+    },
+    "data": {
+      "features": "base",
+      "half_life": null
+    },
+    "cv_mae": 16.44598546236608
+  }
+}
