@@ -51,14 +51,18 @@ Seeds are fixed, so a rebuild reproduces the same numbers. Tests: `pytest -q`.
 Notebooks (`notebooks/01_eda`, `02_modeling`, `03_backtest`) read the pipeline's outputs and explain them;
 rerun one with `jupyter nbconvert --to notebook --execute --inplace notebooks/<name>.ipynb`.
 
-## The app
+## The app: "Primary Desk"
 
-- **Predict:** enter the final-day subscription (or pick a past IPO). Shows expected gain, the 80%
-  range, Apply/Skip, allotment odds, SHAP reasons and the most similar past IPOs. For a past IPO
-  it also shows what the walk-forward model said before that IPO listed.
-- **Explore:** every IPO, filterable by year and subscription.
-- **Backtest:** strategies compared, with a threshold slider.
-- **Model card:** data, testing, accuracy and limitations.
+A dark, research-desk style app with a live NIFTY / India VIX bar and a ticker of recent listings.
+
+- **Research Note:** enter the final-day book (or pick a past issue) and get a note in the style of a
+  broker's IPO note: SUBSCRIBE / AVOID with a conviction level, expected listing return, bear (P10) and
+  bull (P90) cases, retail allotment odds, an investment thesis built from the SHAP drivers, key risks
+  (filtered so they never contradict the drivers), and comparable listings. For a past issue it shows
+  the call on record from before that IPO listed.
+- **Market Monitor:** every IPO, filterable by year and demand.
+- **Strategy Performance:** the desk vs "subscribe to everything" vs the 30x rule, per test period.
+- **Methodology:** data, testing, accuracy and limitations.
 
 NIFTY and India VIX are fetched live. The IPO history ends in May 2026, so for a live call enter
 the recent IPO count and average gain under *Market context*.

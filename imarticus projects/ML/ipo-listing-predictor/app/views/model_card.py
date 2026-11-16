@@ -8,15 +8,15 @@ NAMES = {"median": "Median of all past IPOs", "bucket_median": "Same-subscriptio
 
 
 def render():
-    ui.hero("Model card", "How it works, and where it doesn't",
-            "Data sources, how the model was tested, the numbers it scored, and its limits.")
+    ui.page_header("Methodology", "How the desk makes its calls",
+                   "Data sources, how the model was tested, the numbers it scored, and where it falls short.")
     deploy, rule, _ = cache.models()
     trained = deploy["trained_on"]
-    ui.cards([
-        ("Ranking 2024–26", "0.71", "Spearman, walk-forward", "blue"),
-        ("Ranking, unseen IPOs", "0.72", "78 IPOs, Jun–Nov 2026", "blue"),
-        ("80% range hit rate", "79% / 87%", "2024–26 / unseen IPOs", "good"),
-        ("IPOs used", f"{trained['ipos']}", f"{trained['first'][:4]}–{trained['last'][:4]}", ""),
+    ui.kpis([
+        ("Ranking 2024–26", "0.71", "Spearman, walk-forward"),
+        ("Ranking, unseen IPOs", "0.72", "78 IPOs, Jun–Nov 2026"),
+        ("80% range hit rate", "79% / 87%", "2024–26 / unseen IPOs"),
+        ("Coverage", f"{trained['ipos']}", f"IPOs, {trained['first'][:4]}–{trained['last'][:4]}"),
     ])
 
     st.markdown(f"""

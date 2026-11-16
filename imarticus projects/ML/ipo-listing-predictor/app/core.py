@@ -58,9 +58,12 @@ def load_history():
 def load_out_of_sample_predictions():
     """Walk-forward predictions (2019 - May 2026) plus forward-test predictions, if any."""
     wf = pd.read_csv(PROCESSED_DIR / "wf_predictions.csv", parse_dates=["listing_date"])
+    wf["period"] = wf["year"].map(lambda y: "2019–2023" if y < 2024 else "2024 – May 2026")
     if FORWARD_PREDICTIONS.exists():
         fwd = pd.read_csv(FORWARD_PREDICTIONS, parse_dates=["listing_date"])
-        wf = pd.concat([wf, fwd[[c for c in wf.columns if c in fwd.columns]]], ignore_index=True)
+        fwd = fwd[[c for c in wf.columns if c in fwd.columns]].assign(
+            year=fwd["listing_date"].dt.year, period="Jun – Nov 2026 (forward test)")
+        wf = pd.concat([wf, fwd], ignore_index=True)
     return wf
 
 
@@ -131,7 +134,7 @@ def explain(deploy, explainer, features):
     imputed = deploy["point"][:-1].transform(X)
     values = explainer.shap_values(imputed)[0]
     shown = [f"{LABELS[c]}" for c in X.columns]
-    out = pd.DataFrame({"feature": shown, "value": X.iloc[0].to_numpy(), "impact": values})
+    out = pd.DataFrame({"column": X.columns, "feature": shown, "value": X.iloc[0].to_numpy(), "impact": values})
     return out.reindex(out["impact"].abs().sort_values(ascending=False).index), float(explainer.expected_value)
 
 
