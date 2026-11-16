@@ -80,6 +80,7 @@ requests==2.34.2
 rpds-py==2026.9.1
 scikit-learn==1.9.1
 scipy==1.17.1
+seaborn==0.13.2
 shap==0.51.0
 slicer==0.0.8
 soupsieve==4.1.1

@@ -48,8 +48,20 @@ streamlit run app/streamlit_app.py
 `python -m src.pipeline --no-download` rebuilds everything from the files already in `data/raw/`.
 Seeds are fixed, so a rebuild reproduces the same numbers. Tests: `pytest -q`.
 
-Notebooks (`notebooks/01_eda`, `02_modeling`, `03_backtest`) read the pipeline's outputs and explain them;
-rerun one with `jupyter nbconvert --to notebook --execute --inplace notebooks/<name>.ipynb`.
+### Notebooks
+
+The analysis was done step by step in notebooks, in this order:
+
+1. `01_data_cleaning`: load the Kaggle file, clean it, find each IPO's NSE symbol, check listing prices
+   against Yahoo, save `data/interim/ipos_verified.csv`
+2. `02_eda`: target, subscription, years, issue size
+3. `03_feature_engineering`: market and recent-IPO features as of 7 days before listing, save
+   `data/processed/ipo_features.csv`
+4. `04_modeling`: baselines, yearly-fold tuning, the frozen-model failure, walk-forward, the 80% range, SHAP
+5. `05_backtest`: one lot per IPO with the allotment lottery, thresholds, bootstrap
+
+The same steps were then moved into `src/` as scripts, so the app and `python -m src.pipeline` can rerun
+them; both write identical files. Run the notebooks from the `notebooks/` folder.
 
 ## The app: "Primary Desk"
 
@@ -115,7 +127,7 @@ src/models/      tuning, walk-forward evaluation, quantile range
 src/backtest.py  strategy backtest with the allotment lottery
 src/pipeline.py  runs everything in order
 app/             Streamlit app
-notebooks/       EDA, modelling, backtest walkthroughs
+notebooks/       cleaning, EDA, features, modelling, backtest (01-05)
 reports/         write-ups and figures
 tests/           pytest (71 tests)
 ```

@@ -1,7 +1,7 @@
 # Model results
 
 Code: `src/models/train.py` (tuning), `src/models/evaluate.py` (walk-forward and final models).
-Walkthrough with charts: `notebooks/02_modeling.ipynb`.
+Walkthrough with charts: `notebooks/04_modeling.ipynb`.
 
 ## Setup
 

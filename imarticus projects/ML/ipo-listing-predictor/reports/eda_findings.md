@@ -1,6 +1,6 @@
 # EDA findings
 
-Source: `notebooks/01_eda.ipynb`, run on 634 Indian mainboard IPOs (Jan 2010 – May 2026).
+Source: `notebooks/02_eda.ipynb` and `03_feature_engineering.ipynb`, run on 634 Indian mainboard IPOs (Jan 2010 – May 2026).
 Target: listing-day gain = listing-day open / offer price − 1. Figures are in `reports/figures/`.
 
 ## 1. The target is skewed

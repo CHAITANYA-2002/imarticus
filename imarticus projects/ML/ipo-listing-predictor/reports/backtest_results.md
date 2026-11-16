@@ -1,6 +1,6 @@
 # Backtest results
 
-Code: `src/backtest.py`. Walkthrough with charts: `notebooks/03_backtest.ipynb`.
+Code: `src/backtest.py`. Walkthrough with charts: `notebooks/05_backtest.ipynb`.
 
 ## Setup
 
