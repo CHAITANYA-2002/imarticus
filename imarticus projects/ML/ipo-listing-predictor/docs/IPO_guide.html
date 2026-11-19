@@ -71,6 +71,8 @@
   tr.hl td { background: #fff4d6 !important; font-weight: 600; }
   td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   code { font-family: Consolas, "SFMono-Regular", Menlo, monospace; font-size: 12.5px; background: var(--blue-soft); padding: 1px 6px; border-radius: 4px; word-break: break-word; }
+  pre.code { background: var(--blue-soft); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 12.5px; line-height: 1.5; margin: 10px 0; }
+  pre.code code { background: none; padding: 0; word-break: normal; white-space: pre; }
   .term { display: inline-block; background: var(--brass-soft); color: #6d4c0c; border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
   .plain { color: var(--ink-soft); font-size: 13px; }
   .pill-yes { background: var(--green-soft); color: var(--green); border-radius: 6px; padding: 2px 8px; font-weight: 700; font-size: 12px; white-space: nowrap; }
@@ -177,6 +179,9 @@
     <li><a href="#features">13. The 18 features</a></li>
     <li class="grp">Part 4 &middot; Model</li>
     <li><a href="#model">14. Model training, step by step</a></li>
+    <li class="sub2"><a href="#model-names">Simple words + technical names</a></li>
+    <li class="sub2"><a href="#cv-name">What the validation is called</a></li>
+    <li class="sub2"><a href="#why-lgbm">Why LightGBM?</a></li>
     <li><a href="#metrics">15. How the model is scored</a></li>
     <li><a href="#results">16. Results</a></li>
     <li><a href="#care">17. What I paid attention to</a></li>
@@ -790,6 +795,81 @@
       </tbody>
     </table>
   </div>
+
+  <h3 id="model-names">The model in one table: simple words and the technical name</h3>
+  <p class="sub">Read the simple words to understand it. Say the technical name when you present it.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="num">#</th><th>Step</th><th>In simple words</th><th>Technical name (say this)</th><th>In the project</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>The job</td><td>Look at the subscription and guess the listing-day gain in %</td><td><b>Regression</b> problem</td><td>Target: <code>target_gain_pct</code></td></tr>
+        <tr><td class="num">2</td><td>Splitting the data</td><td>Learn from old IPOs; hide the newest ones for the final test</td><td><b>Time-based train-test split</b>, hold-out test set</td><td>2010&ndash;23: 432 IPOs &middot; 2024&ndash;26: 202 IPOs</td></tr>
+        <tr><td class="num">3</td><td>Practice tests</td><td>Learn up to 2018, test 2019; learn up to 2019, test 2020; ... five tests, with a 7-day gap</td><td><b>Time-series cross-validation</b> (expanding window, forward chaining)</td><td><code>year_folds()</code>; shuffled KFold not used</td></tr>
+        <tr><td class="num">4</td><td>What to beat</td><td>"Median gain of past IPOs in the same subscription group"</td><td><b>Baseline models</b>: median, bucket median</td><td><code>MedianModel</code>, <code>BucketMedian</code>; MAE 17.21</td></tr>
+        <tr><td class="num">5</td><td>Models tried</td><td>A straight line / 400 trees that vote / trees built one after another</td><td><b>Ridge</b>, <b>Random Forest</b>, <b>LightGBM</b></td><td><code>make_model()</code></td></tr>
+        <tr><td class="num">6</td><td>Problem 1</td><td>The model memorised: a miss of ~4 on practice years, ~15 on new years</td><td><b>Overfitting</b></td><td><code>time_eval()</code>: train vs valid MAE</td></tr>
+        <tr><td class="num">7</td><td>Stopped the memorising</td><td>Smaller trees, and only a few settings tried</td><td><b>Regularization</b> + <b>hyperparameter tuning</b> (grid search)</td><td><code>max_depth=8</code>, <code>min_samples_leaf=5</code>, 94 combinations</td></tr>
+        <tr><td class="num">8</td><td>Problem 2</td><td>Trained once and left alone, it failed on 2024&ndash;26</td><td><b>Concept drift</b> (subscription inflation)</td><td>RF 22.03 vs bucket median 17.94</td></tr>
+        <tr><td class="num">9</td><td>The fix</td><td>Re-teach the model every 3 months with the newest IPOs</td><td><b>Walk-forward validation</b>, quarterly refit</td><td><code>walk_forward()</code></td></tr>
+        <tr><td class="num">10</td><td>Choosing the model</td><td>The one with the smallest miss on 2019&ndash;23</td><td><b>Model selection</b> without touching the test set</td><td>Random Forest 16.13</td></tr>
+        <tr><td class="num">11</td><td>How it is judged</td><td>Average miss, and whether good and bad IPOs are put in the right order</td><td><b>MAE</b> + <b>Spearman rank correlation</b></td><td>MAE 19.52, Spearman <b>0.71</b></td></tr>
+        <tr><td class="num">12</td><td>The range</td><td>A bad case and a good case that really catch about 8 in 10 IPOs</td><td><b>Quantile regression</b> + <b>conformal calibration</b></td><td>LightGBM quantile; coverage <b>79%</b></td></tr>
+        <tr><td class="num">13</td><td>The reasons</td><td>What pushed each guess up or down, and by how much</td><td><b>SHAP</b> (explainability)</td><td>Top: total subscription, 8.85 pp</td></tr>
+        <tr><td class="num">14</td><td>Final model</td><td>Re-trained once on every IPO, used by the app</td><td><b>Final refit</b></td><td>Random Forest on 712 IPOs</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="cv-name">What is this validation called? (it is not KFold)</h3>
+  <div class="kid"><b class="h">In simple words</b><p>The model always learns from the years <b>before</b> and is tested on the year <b>after</b>. Never the other way round. Each test adds one more year to what it learns from.</p></div>
+  <p>Its name is <b>time-series cross-validation</b> with an <b>expanding window</b>, also called <b>forward chaining</b>. The scikit-learn version of the idea is <code>TimeSeriesSplit</code>; here it is written by hand so that each fold is one calendar year and keeps a 7-day gap.</p>
+  <pre class="code"><code>def year_folds(d):
+    for year in range(2019, 2024):
+        cutoff = pd.Timestamp(year, 1, 1) - pd.Timedelta(days=7)
+        yield d.index[d["listing_date"] &lt; cutoff], d.index[d["year"] == year]</code></pre>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Line</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>for year in range(2019, 2024)</code></td><td>Five tests: 2019, 2020, 2021, 2022, 2023</td></tr>
+        <tr><td><code>cutoff = 1 Jan &minus; 7 days</code></td><td>For 2019 the training data stops on 25 Dec 2018</td></tr>
+        <tr><td><code>listing_date &lt; cutoff</code></td><td>Training rows: every IPO before the cutoff</td></tr>
+        <tr><td><code>year == year</code></td><td>Validation rows: that year's IPOs</td></tr>
+        <tr><td><code>yield</code></td><td>Hands over one (train, valid) pair at a time</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Test year</th><th class="num">Learnt from (IPOs)</th><th class="num">Tested on (IPOs)</th></tr></thead>
+      <tbody>
+        <tr><td>2019</td><td class="num">240</td><td class="num">16</td></tr>
+        <tr><td>2020</td><td class="num">255</td><td class="num">15</td></tr>
+        <tr><td>2021</td><td class="num">271</td><td class="num">63</td></tr>
+        <tr><td>2022</td><td class="num">331</td><td class="num">39</td></tr>
+        <tr><td>2023</td><td class="num">371</td><td class="num">59</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="plain">The training set grows every year (240 &rarr; 371): that is the "expanding window". The same folds are used by <code>time_eval()</code> (train vs valid table) and by <code>cv_predict()</code> (tuning the 94 settings).</p>
+  <div class="vs">
+    <div class="bad"><b class="h">KFold(shuffle=True), from class</b>Mixes all years, so a fold can learn from 2023 and be tested on 2019: the future predicts the past, and the score looks better than it really is.</div>
+    <div class="good"><b class="h">Year folds, used here</b>Always learns from the past and tests on the next year, exactly how the model is used in real life.</div>
+  </div>
+  <div class="say-it">Say it: "It is not KFold. I used time-series cross-validation with an expanding window: for each year from 2019 to 2023 the model trains only on IPOs before that year, with a 7-day gap, and is tested on that year. Shuffled KFold would leak the future."</div>
+
+  <h3 id="why-lgbm">Why LightGBM?</h3>
+  <p>LightGBM is used in <b>two</b> places, for two different reasons.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Job</th><th>Why LightGBM</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><b>Candidate for the main guess</b></td><td>On tables of rows and columns it is often the strongest model; it handles missing values by itself and is fast.</td><td>Slightly behind Random Forest on 2019&ndash;23 walk-forward (16.23 vs <b>16.13</b>), so not chosen for the main guess.</td></tr>
+        <tr><td>2</td><td><b>The 80% range</b> (bad case, good case)</td><td><b>Quantile loss is built in</b> (<code>objective="quantile"</code>). One setting gives the 10th, 50th and 90th percentile guesses. scikit-learn's Random Forest has no such option.</td><td>Three quantile models (alpha 0.1, 0.5, 0.9) + conformal calibration &rarr; coverage <b>79%</b>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="say-it">Say it: "LightGBM was a candidate for the main model, but Random Forest had a slightly lower walk-forward MAE (16.13 vs 16.23). I kept LightGBM for the 80% range because quantile loss is built in: three models at alpha 0.1, 0.5 and 0.9, then conformal calibration brought coverage to 79%."</div>
 </section>
 
 <section id="metrics">
@@ -1169,6 +1249,8 @@
   <p class="sub">Tap a question to see the answer.</p>
   <div class="qa">
     <details><summary>Why not use a normal random train_test_split?</summary><p>IPOs come in waves and subscription has inflated. A random split would train on 2025 and test on 2019, which leaks the future and gives a fake score. I split by time: tune on 2010 to 2023, test on 2024 to 2026, and retrain every quarter.</p></details>
+    <details><summary>What is your validation method called?</summary><p>Time-series cross-validation with an expanding window (forward chaining). For each year from 2019 to 2023 the model trains only on IPOs listed before that year, with a 7-day gap, and is tested on that year. It is the same idea as scikit-learn's <code>TimeSeriesSplit</code>, written by hand as <code>year_folds()</code> so each fold is one calendar year.</p></details>
+    <details><summary>Where and why did you use LightGBM?</summary><p>Two places. First as a candidate for the main guess: it came a close second to Random Forest (16.23 vs 16.13 walk-forward MAE). Second for the 80% range, because LightGBM has quantile loss built in: three models at alpha 0.1, 0.5 and 0.9, then rolling conformal calibration brought the coverage to 79%.</p></details>
     <details><summary>Why didn't you use the class helper regression_eval?</summary><p>It uses KFold with shuffle=True, which mixes years. I kept the same idea (one table of train vs valid MAE and R&sup2;) but with year folds, and a 7-day gap between training and validation.</p></details>
     <details><summary>Why not use GMP (grey market premium)? Everyone looks at it.</summary><p>It is unofficial, quoted by informal dealers, and there is no reliable, checkable history of it. A model trained on numbers I can't verify would not be trustworthy. Everything I used comes from official or checkable sources.</p></details>
     <details><summary>Your model loses to a simple lookup on MAE. So why use it?</summary><p>On the exact number, yes, the bucket median is as good or slightly better (17.3 vs 19.5 pp in 2024 to 2026). But the model ranks IPOs better (Spearman 0.71 vs 0.67), and the decision "apply or skip" is a ranking question. In the backtest the model made more expected profit than every simple rule. I report both, honestly.</p></details>
