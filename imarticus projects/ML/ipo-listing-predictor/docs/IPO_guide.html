@@ -190,6 +190,7 @@
     <li class="sub2"><a href="#why-lgbm">Why LightGBM?</a></li>
     <li><a href="#metrics">15. How the model is scored</a></li>
     <li><a href="#results">16. Results</a></li>
+    <li class="sub2"><a href="#scorecard">H. Scorecard: every model</a></li>
     <li><a href="#care">17. What I paid attention to</a></li>
     <li class="grp">Part 5 &middot; Money</li>
     <li><a href="#backtest">18. Backtest: does it make money?</a></li>
@@ -1083,6 +1084,121 @@
   </div>
   <p><b>Honest reading:</b> the model correctly said "big jump, apply", but the real jump was even bigger than the top of its range. This is one of the ~1 in 5 IPOs that fall outside an 80% range, which is exactly what "80%" means.</p>
   <div class="say-it">Say it: "I tuned on 2010 to 2023 and tested on 2024 to 2026, retraining every quarter like real use. The forest ranks IPOs best, Spearman 0.71, but a simple subscription lookup is as good on the exact number. So the model's value is the apply / skip decision, which I test next."</div>
+
+  <h3 id="scorecard">H. Scorecard: every model, every number</h3>
+  <div class="kid"><b class="h">In simple words</b><p>Every model I tried, at every stage, with how much it missed and how often it was right. The best number in each column is in <b>bold</b>. Two simple baselines are included, because the models have to beat them.</p></div>
+
+  <p><b>What each number means</b></p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Number</th><th>In simple words</th><th>Better when</th></tr></thead>
+      <tbody>
+        <tr><td><b>MAE</b></td><td>Average miss, in percentage points. Real +30%, guess +10% = a miss of 20.</td><td>lower</td></tr>
+        <tr><td><b>Median miss</b></td><td>The miss on a typical IPO (half the IPOs are missed by less than this).</td><td>lower</td></tr>
+        <tr><td><b>RMSE</b></td><td>Like MAE, but big misses count extra. A few 200% IPOs push it up.</td><td>lower</td></tr>
+        <tr><td><b>R&sup2;</b></td><td>Share of the ups and downs the model explains. 1 = all, 0 = no better than guessing the average, below 0 = worse.</td><td>higher</td></tr>
+        <tr><td><b>Spearman</b></td><td>Does it put IPOs in the right order, best to worst? 1 = perfect order, 0 = random. This is what apply / skip needs.</td><td>higher</td></tr>
+        <tr><td><b>Within &plusmn;10 pp</b></td><td>% of IPOs where the guess was within 10 points of the real gain.</td><td>higher</td></tr>
+        <tr><td><b>Direction right</b></td><td>% of IPOs where it correctly said "lists up" or "does not list up".</td><td>higher</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><b>1. First try and tuned: train vs valid</b> (average over the five year folds, 2019&ndash;23)</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th class="num">Train MAE</th><th class="num">Valid MAE</th><th class="num">Train R&sup2;</th><th class="num">Valid R&sup2;</th><th>Reading</th></tr></thead>
+      <tbody>
+        <tr><td>Median baseline</td><td class="num">16.06</td><td class="num">27.26</td><td class="num">&minus;0.10</td><td class="num">&minus;0.34</td><td>knows nothing</td></tr>
+        <tr><td>Bucket median baseline</td><td class="num">10.23</td><td class="num">16.26</td><td class="num">0.55</td><td class="num">0.51</td><td>the line to beat</td></tr>
+        <tr><td>Ridge, alpha 1</td><td class="num">11.80</td><td class="num">18.50</td><td class="num">0.53</td><td class="num">0.38</td><td>small gap, but weak</td></tr>
+        <tr><td>Random Forest, no limit</td><td class="num">3.70</td><td class="num"><b>14.88</b></td><td class="num">0.94</td><td class="num"><b>0.56</b></td><td>memorises (gap 3.7 vs 14.9)</td></tr>
+        <tr><td>LightGBM, 500 trees, 31 leaves</td><td class="num">3.85</td><td class="num">15.85</td><td class="num">0.92</td><td class="num">0.50</td><td>memorises (gap 3.9 vs 15.9)</td></tr>
+        <tr><td>Ridge, tuned (alpha 30)</td><td class="num">11.64</td><td class="num">18.39</td><td class="num">0.51</td><td class="num">0.41</td><td>slightly better</td></tr>
+        <tr><td><b>Random Forest, tuned (depth 8, leaf 5)</b></td><td class="num">7.02</td><td class="num">15.39</td><td class="num">0.76</td><td class="num"><b>0.56</b></td><td>gap shrunk to 7.0 vs 15.4</td></tr>
+        <tr><td>LightGBM, tuned</td><td class="num">6.91</td><td class="num">15.75</td><td class="num">0.76</td><td class="num">0.53</td><td>gap shrunk to 6.9 vs 15.8</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><b>2. Tuning: best setting of each model</b> (year folds 2019&ndash;23, 94 combinations)</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th>Best setting</th><th class="num">MAE</th><th class="num">Median miss</th><th class="num">RMSE</th><th class="num">Spearman</th></tr></thead>
+      <tbody>
+        <tr><td><b>Random Forest</b></td><td>depth 8, min leaf 5, 400 trees</td><td class="num"><b>16.03</b></td><td class="num"><b>9.59</b></td><td class="num"><b>26.62</b></td><td class="num"><b>0.76</b></td></tr>
+        <tr><td>LightGBM</td><td>200 trees, 15 leaves, min child 25</td><td class="num">16.45</td><td class="num">9.73</td><td class="num">27.07</td><td class="num">0.74</td></tr>
+        <tr><td>Bucket median</td><td>&ndash;</td><td class="num">17.21</td><td class="num">10.12</td><td class="num">27.95</td><td class="num">0.71</td></tr>
+        <tr><td>Ridge</td><td>alpha 30</td><td class="num">18.71</td><td class="num">11.61</td><td class="num">29.32</td><td class="num">0.73</td></tr>
+        <tr><td>Median</td><td>&ndash;</td><td class="num">26.74</td><td class="num">13.10</td><td class="num">43.60</td><td class="num">&minus;0.02</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><b>3. Exam 1: frozen at the end of 2023, scored on 2024&ndash;26</b> (202 IPOs, the failed exam)</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th class="num">MAE</th><th class="num">Median miss</th><th class="num">RMSE</th><th class="num">Spearman</th></tr></thead>
+      <tbody>
+        <tr><td>Bucket median</td><td class="num"><b>17.94</b></td><td class="num">12.51</td><td class="num"><b>25.64</b></td><td class="num"><b>0.69</b></td></tr>
+        <tr><td>Median</td><td class="num">18.98</td><td class="num"><b>9.30</b></td><td class="num">32.12</td><td class="num">0.00</td></tr>
+        <tr><td>Ridge</td><td class="num">21.29</td><td class="num">16.65</td><td class="num">27.86</td><td class="num">0.65</td></tr>
+        <tr><td>Random Forest</td><td class="num">22.03</td><td class="num">13.54</td><td class="num">31.29</td><td class="num"><b>0.69</b></td></tr>
+        <tr><td>LightGBM</td><td class="num">24.61</td><td class="num">14.25</td><td class="num">34.29</td><td class="num">0.67</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><b>4. Walk-forward, retrained every quarter: 2019&ndash;23</b> (192 IPOs, used to choose the model)</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th class="num">MAE</th><th class="num">Median miss</th><th class="num">RMSE</th><th class="num">R&sup2;</th><th class="num">Spearman</th><th class="num">Within &plusmn;10 pp</th><th class="num">Direction right</th></tr></thead>
+      <tbody>
+        <tr><td><b>Random Forest</b></td><td class="num"><b>16.13</b></td><td class="num"><b>9.15</b></td><td class="num"><b>27.01</b></td><td class="num"><b>0.50</b></td><td class="num"><b>0.76</b></td><td class="num"><b>53.6%</b></td><td class="num"><b>77.1%</b></td></tr>
+        <tr><td>LightGBM</td><td class="num">16.23</td><td class="num">9.96</td><td class="num">27.20</td><td class="num"><b>0.50</b></td><td class="num">0.75</td><td class="num">50.5%</td><td class="num">75.0%</td></tr>
+        <tr><td>Bucket median</td><td class="num">17.27</td><td class="num">10.12</td><td class="num">28.22</td><td class="num">0.46</td><td class="num">0.70</td><td class="num">49.0%</td><td class="num">75.0%</td></tr>
+        <tr><td>Ridge</td><td class="num">18.69</td><td class="num">12.01</td><td class="num">29.31</td><td class="num">0.42</td><td class="num">0.73</td><td class="num">45.8%</td><td class="num">70.8%</td></tr>
+        <tr><td>Median</td><td class="num">26.70</td><td class="num">12.92</td><td class="num">43.47</td><td class="num">&minus;0.28</td><td class="num">0.03</td><td class="num">38.5%</td><td class="num">73.4%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><b>5. Walk-forward, retrained every quarter: 2024&ndash;26</b> (202 IPOs, the final exam)</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th class="num">MAE</th><th class="num">Median miss</th><th class="num">RMSE</th><th class="num">R&sup2;</th><th class="num">Spearman</th><th class="num">Within &plusmn;10 pp</th><th class="num">Direction right</th></tr></thead>
+      <tbody>
+        <tr><td><b>Random Forest</b> (chosen)</td><td class="num">19.52</td><td class="num">12.13</td><td class="num">27.99</td><td class="num">0.15</td><td class="num"><b>0.71</b></td><td class="num">44.6%</td><td class="num">72.8%</td></tr>
+        <tr><td>LightGBM</td><td class="num">20.92</td><td class="num">12.21</td><td class="num">29.65</td><td class="num">0.05</td><td class="num">0.68</td><td class="num">41.1%</td><td class="num">70.3%</td></tr>
+        <tr><td>Bucket median</td><td class="num"><b>17.26</b></td><td class="num">11.83</td><td class="num"><b>24.78</b></td><td class="num"><b>0.34</b></td><td class="num">0.67</td><td class="num">43.6%</td><td class="num"><b>74.8%</b></td></tr>
+        <tr><td>Ridge</td><td class="num">20.08</td><td class="num">15.84</td><td class="num">26.65</td><td class="num">0.23</td><td class="num">0.65</td><td class="num">34.2%</td><td class="num">74.3%</td></tr>
+        <tr><td>Median</td><td class="num">19.06</td><td class="num"><b>9.73</b></td><td class="num">31.97</td><td class="num">&minus;0.10</td><td class="num">&minus;0.17</td><td class="num"><b>51.5%</b></td><td class="num">67.8%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><b>6. Forward test: 78 new IPOs, Jun&ndash;Nov 2026</b> (scored once, nothing changed after)</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th class="num">MAE</th><th class="num">Median miss</th><th class="num">RMSE</th><th class="num">R&sup2;</th><th class="num">Spearman</th><th class="num">Within &plusmn;10 pp</th><th class="num">Direction right</th></tr></thead>
+      <tbody>
+        <tr><td><b>Random Forest</b></td><td class="num">15.44</td><td class="num">11.20</td><td class="num">20.84</td><td class="num">0.21</td><td class="num">0.72</td><td class="num"><b>48.7%</b></td><td class="num">78.2%</td></tr>
+        <tr><td>Bucket median</td><td class="num"><b>14.54</b></td><td class="num">11.16</td><td class="num"><b>19.49</b></td><td class="num"><b>0.31</b></td><td class="num"><b>0.73</b></td><td class="num">47.4%</td><td class="num"><b>80.8%</b></td></tr>
+        <tr><td>Median</td><td class="num">17.65</td><td class="num"><b>10.62</b></td><td class="num">26.19</td><td class="num">&minus;0.25</td><td class="num">&minus;0.05</td><td class="num"><b>48.7%</b></td><td class="num">78.2%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="plain">Ridge and LightGBM point models were not part of the forward test; only the chosen model and the two baselines were scored.</p>
+
+  <div class="callout warn"><b>Honest reading</b>
+    <ul>
+      <li><b>2019&ndash;23 (where the model was chosen):</b> Random Forest is best on every number.</li>
+      <li><b>2024&ndash;26 and the forward test:</b> the simple bucket median is as good or better on most error numbers (MAE, RMSE, R&sup2;, direction). The forest is best on ranking in 2024&ndash;26 (Spearman 0.71), and ranking is what the apply / skip decision uses: in the backtest it earned &#8377;30,588 vs &#8377;24,506 for applying to everything.</li>
+      <li><b>R&sup2; is low on new years</b> (0.15 for the forest in 2024&ndash;26): a handful of IPOs that jump 100 to 250% make R&sup2; swing a lot, which is why MAE and Spearman are the main scores.</li>
+      <li><b>The median baseline looks good on "median miss" and "within &plusmn;10 pp"</b> only because many IPOs list close to a small gain. It cannot rank IPOs at all (Spearman about 0), so it is useless for apply / skip. Its "direction right" is just the share of IPOs that listed up, because it always guesses "up".</li>
+    </ul>
+  </div>
+  <div class="say-it">Say it: "On 2019&ndash;23 the forest won on every metric. On the new years a simple subscription lookup is as accurate on the exact number, and I report that. The forest stays the best at ranking, Spearman 0.71, which is what the apply / skip call needs."</div>
 </section>
 
 <section id="care">
