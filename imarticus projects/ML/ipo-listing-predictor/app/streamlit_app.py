@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import streamlit as st  # noqa: E402
 
 from app import cache, ui  # noqa: E402
-from app.views import backtest, explore, model_card, predict  # noqa: E402
+from app.views import backtest, explore, model_card, predict, track_record  # noqa: E402
 
 st.set_page_config(page_title="Primary Desk · IPO Research", page_icon="📈", layout="wide")
 ui.setup()
@@ -34,6 +34,7 @@ market_header()
 nav = st.navigation([
     st.Page(predict.render, title="Research Note", icon=":material/description:", default=True),
     st.Page(explore.render, title="Market Monitor", icon=":material/monitoring:", url_path="monitor"),
+    st.Page(track_record.render, title="Track Record", icon=":material/verified:", url_path="track-record"),
     st.Page(backtest.render, title="Strategy Performance", icon=":material/account_balance_wallet:", url_path="performance"),
     st.Page(model_card.render, title="Methodology", icon=":material/science:", url_path="methodology"),
 ])

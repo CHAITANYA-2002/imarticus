@@ -756,7 +756,7 @@ IPOs that fall outside an 80% range, which is what "80%" means.
 | Failure reported | The frozen model's loss is shown, not hidden |
 | Same results every run | Fixed seed (42); rebuilding from raw files gives the same data files |
 | Notebook = pipeline | Notebooks and `python -m src.pipeline` produce the same numbers (checked file by file) |
-| Tested code | 83 automated tests (`pytest`) |
+| Tested code | 102 automated tests (`pytest`) |
 
 ---
 
@@ -865,8 +865,32 @@ Same story as 2024–26: best ranking (0.72), range caught 87%, model earned the
 |---|---|---|
 | **Research Note** | Pick a past IPO or enter a new one → verdict, conviction, expected gain, bear and bull case (80% range), allotment odds, expected value of one lot, drivers for and against (SHAP), key risks, 5 most similar past IPOs. For a past IPO, the call made **before** it listed | Should I apply? |
 | Market Monitor | Every IPO since 2010, filters, charts, full table | How is the IPO market doing? |
+| **Track Record** | Every call locked **before** listing in a hash-chained ledger, then scored: calls right, subscribe hit rate, losses avoided, 80% range hits, call-vs-outcome chart. Also shows the 78-IPO forward test, clearly marked | Can I trust the calls? |
 | Strategy Performance | Backtest for 2019–23, 2024–26 and the forward test; threshold slider; equity curve | Has following the desk paid off? |
 | Methodology | Data, testing, scores, forward test, limits | Can I trust it? |
+
+**Track record ledger (`ledger/calls.csv`)**
+
+A public track record is what makes the calls believable, so every call can be put on the record before listing.
+
+| Step | What happens | Why it builds trust |
+|---|---|---|
+| Lock | On **Research Note**, enter an issue that has not listed yet and press **Lock this call**. The call, its 80% range, the inputs, a UTC timestamp and the model file's SHA-256 prefix are appended to `ledger/calls.csv` | The call exists before the outcome |
+| Chain | Each row's SHA-256 fingerprint covers its own contents **and** the previous row's fingerprint | Editing a number, deleting a row or reordering breaks the chain |
+| One call per issue | A second lock for the same issuer is refused; a lock on or after listing day (India time) is refused | No cherry-picking, no hindsight |
+| Score | After listing, add the NSE open (form on the page, `python -m src.ledger result SEQ OPEN`, or `python -m src.ledger score` once the IPO is in the history) | Wins and misses both stay |
+| Verify | `python -m src.ledger verify` recomputes every fingerprint. Commit `ledger/calls.csv` after each lock for an outside (git) timestamp | Anyone can check it |
+
+The ledger starts with the 78 forward-test IPOs, marked `forward_test`: the model was frozen before they listed, but
+the calls were written down afterwards, so the page shows them separately from true `live` calls.
+
+| Forward test in the ledger (78 IPOs) | Value |
+|---|---|
+| Calls right (Subscribe listed up, or Avoid listed flat/down) | 62 of 78 (79%) |
+| Subscribe calls that listed up | 57 of 69 (83%), average +21.3% |
+| Avoid calls | 9, average −3.3% |
+| Below-issue listings flagged Avoid | 5 of 10 |
+| Actual inside the 80% range | 68 of 78 (87%) |
 
 **How the verdict is decided**
 
@@ -886,7 +910,8 @@ The app's model is the same configuration refit on all **712** IPOs up to 4 Nov 
 2. Scroll to **Investment thesis**: long QIB and HNI queues support it; weak market weighs a little.
 3. Pick **ACME Solar** → **AVOID**: 2.8x subscription pulled the guess down; it really listed −13.1%.
 4. **Strategy Performance** → the model's line above "apply to every IPO", the 30x rule's low line.
-5. **Methodology** → forward test and honest limits.
+5. **Track Record** → ledger verified badge, the forward test scorecard, call-vs-outcome chart.
+6. **Methodology** → forward test and honest limits.
 
 The first load after a restart takes 20–30 seconds (libraries, model, live market data).
 
@@ -904,7 +929,7 @@ streamlit run app/streamlit_app.py       # open http://localhost:8501
 
 - `python -m src.pipeline --no-download` rebuilds everything from the files already in `data/raw/`.
 - Seeds are fixed, so a rebuild reproduces the same numbers.
-- Tests: `pytest -q` (83 tests).
+- Tests: `pytest -q` (102 tests).
 
 **Notebooks** (run from the `notebooks/` folder, in order; they write the same files as `src/`):
 
@@ -1103,9 +1128,10 @@ grid; a QIB-share-of-demand feature; financials and valuation from the RHP; real
 | Models, tuning, walk-forward, range, SHAP | `notebooks/04_modeling.ipynb` | `src/models/train.py`, `walk_forward.py`, `evaluate.py` |
 | Backtest | `notebooks/05_backtest.ipynb` | `src/backtest.py` |
 | Forward test (Jun–Nov 2026) | – | `src/forward_test.py` → `reports/forward_test.md` |
+| Track record ledger | – | `src/ledger.py` → `ledger/calls.csv` |
 | Everything in one go | – | `python -m src.pipeline` |
 | App | – | `streamlit run app/streamlit_app.py` |
-| Tests | – | `pytest -q` (83 tests) |
+| Tests | – | `pytest -q` (102 tests) |
 | Class helpers | `notebooks/useful_func.py` (`missing_info`, `out_info`) | – |
 
 ```
@@ -1119,10 +1145,11 @@ src/models/      tuning, walk-forward evaluation, quantile range
 src/backtest.py  strategy backtest with the allotment lottery
 src/pipeline.py  runs everything in order
 app/             Streamlit app
+ledger/          calls.csv: hash-chained track record (committed to git)
 notebooks/       cleaning, EDA, features, modelling, backtest (01-05)
 reports/         write-ups and figures
 docs/            IPO_guide.html (the same content as a styled page)
-tests/           pytest (83 tests)
+tests/           pytest (102 tests)
 ```
 
 Written reports: [data audit](reports/data_audit.md) · [EDA findings](reports/eda_findings.md) ·

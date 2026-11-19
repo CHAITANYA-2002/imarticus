@@ -136,6 +136,28 @@ h1, h2, h3, h4 { font-family: 'Inter', sans-serif !important; letter-spacing: -0
              background:var(--soft); border:1px solid var(--line2); border-radius:14px; }
 .side-foot b { color:var(--text); font-weight:650; }
 
+/* track record */
+.seal { display:flex; align-items:center; gap:16px; flex-wrap:wrap; background:var(--card); border:1px solid var(--line);
+        border-radius:16px; padding:16px 20px; box-shadow:var(--shadow); margin:4px 0 14px; }
+.seal .icon { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; flex:none;
+              background:var(--accent-soft); color:var(--accent-d); }
+.seal.bad .icon { background:var(--down-soft); color:#b42323; }
+.seal .body { flex:1; min-width:220px; }
+.seal .title { font-weight:700; color:var(--text); font-size:1rem; }
+.seal .sub { color:var(--muted); font-size:13px; margin-top:2px; line-height:1.5; }
+.seal .facts { display:flex; gap:8px; flex-wrap:wrap; }
+.hash { font-family:ui-monospace, 'SFMono-Regular', Consolas, monospace; font-size:12px; color:var(--text2);
+        background:var(--soft); border:1px solid var(--line2); border-radius:8px; padding:3px 8px; }
+.steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:0 0 22px; }
+.step { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow); }
+.step .n { width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700;
+           background:var(--accent-soft); color:var(--accent-d); }
+.step h5 { margin:10px 0 4px; font-size:.95rem; font-weight:650; color:var(--text); }
+.step p { margin:0; font-size:13px; color:var(--muted); line-height:1.5; }
+.lockbox { background:var(--card); border:1px dashed #b9c2cf; border-radius:16px; padding:16px 20px; margin:6px 0 14px; }
+.lockbox b { color:var(--text); }
+.lockbox p { margin:4px 0 0; color:var(--muted); font-size:13.5px; line-height:1.55; }
+
 @media (max-width: 640px) {
   .block-container { padding-left:1rem; padding-right:1rem; }
   .pagehead h1 { font-size:1.7rem; }
@@ -154,7 +176,8 @@ def setup():
     st.sidebar.markdown(
         '<div class="side-foot"><b>Coverage</b><br>712 mainboard IPOs, 2010 – Nov 2026<br><br>'
         '<b>Engine</b><br>Random forest + calibrated 80% range<br><br>'
-        '<b>Track record</b><br>Walk-forward 2019–2026, then a frozen forward test on 78 unseen IPOs</div>',
+        '<b>Track record</b><br>Walk-forward 2019–2026, a frozen forward test on 78 unseen IPOs, and a '
+        'hash-chained ledger of calls locked before listing</div>',
         unsafe_allow_html=True,
     )
 
@@ -241,3 +264,33 @@ def disclaimer():
         'Past listing performance does not predict future results.</div>',
         unsafe_allow_html=True,
     )
+
+
+SHIELD = ('<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+          'stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/>'
+          '{mark}</svg>')
+
+
+def ledger_seal(problems, count, head, first_lock):
+    """Banner that says whether the call ledger's hash chain checks out."""
+    ok = not problems
+    mark = '<path d="M8.5 12l2.5 2.5 4.5-5"/>' if ok else '<path d="M12 8v5M12 16.5v.01"/>'
+    title = f"Ledger verified · {count} calls intact" if ok else f"Ledger check failed · {len(problems)} problem(s)"
+    sub = ("Every row's fingerprint matches its contents and links to the row before it. Changing any past number "
+           "would break the chain." if ok else " ".join(escape(p) for p in problems[:3]))
+    facts = (f'<span class="hash">head {escape(head[:12])}</span>'
+             f'<span class="hash">first lock {escape(first_lock)}</span>') if count else ""
+    st.markdown(f'<div class="seal{"" if ok else " bad"}"><div class="icon">{SHIELD.format(mark=mark)}</div>'
+                f'<div class="body"><div class="title">{escape(title)}</div><div class="sub">{sub}</div></div>'
+                f'<div class="facts">{facts}</div></div>', unsafe_allow_html=True)
+
+
+def steps(items):
+    """items: (title, text) — numbered how-it-works cards."""
+    cells = "".join(f'<div class="step"><div class="n">{i}</div><h5>{escape(t)}</h5><p>{escape(x)}</p></div>'
+                    for i, (t, x) in enumerate(items, start=1))
+    st.markdown(f'<div class="steps">{cells}</div>', unsafe_allow_html=True)
+
+
+def lockbox(title, text):
+    st.markdown(f'<div class="lockbox"><b>{escape(title)}</b><p>{escape(text)}</p></div>', unsafe_allow_html=True)

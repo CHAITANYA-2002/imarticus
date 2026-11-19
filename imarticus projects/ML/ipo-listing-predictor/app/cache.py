@@ -4,7 +4,9 @@ import pandas as pd
 import streamlit as st
 
 from app import core
+from src import ledger
 from src.config import PROCESSED_DIR
+from src.models.train import MODELS_DIR
 
 
 @st.cache_resource
@@ -31,3 +33,9 @@ def walk_forward_predictions():
 @st.cache_data
 def csv(name):
     return pd.read_csv(PROCESSED_DIR / name)
+
+
+@st.cache_resource
+def model_id():
+    """Name and SHA-256 prefix of the model file the app predicts with, stamped on every locked call."""
+    return ledger.model_fingerprint(core.LIVE_MODEL if core.LIVE_MODEL.exists() else MODELS_DIR / "deploy.pkl")

@@ -1,9 +1,10 @@
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pandas as pd
 import streamlit as st
 
 from app import cache, charts, core, research, ui
+from src import ledger
 
 NEW_IPO = "New issue (enter details)"
 FIELDS = ["listing_date", "offer_price", "issue_size_cr", "sub_qib", "sub_hni", "sub_rii", "sub_total"]
@@ -85,6 +86,8 @@ def show_note(name, ipo, pred, past_row, explained, base_value, history):
     st.plotly_chart(charts.range_bar(pred, actual), use_container_width=True, config={"displayModeBar": False})
     if past_row is not None:
         show_past_check(past_row)
+    else:
+        lock_panel(name, ipo, pred)
 
     ui.section("Investment thesis", "What drives the call, in percentage points of expected return")
     supports, weighs = research.thesis(explained["column"], explained["value"], explained["impact"])
@@ -115,6 +118,44 @@ def show_note(name, ipo, pred, past_row, explained, base_value, history):
                        **{c: st.column_config.NumberColumn(format="%.1fx") for c in ["QIB", "HNI", "Retail", "Overall"]},
                        "Day-one return": st.column_config.NumberColumn(format="%+.1f%%")},
     )
+
+
+def lock_call(entry):
+    """Button callback: append the call to the ledger. Runs before the rerun, so the message survives it."""
+    try:
+        book = ledger.lock(ledger.load(), entry)
+        ledger.save(book)
+        row = book.iloc[-1]
+        st.session_state["lock_message"] = ("ok", (f"Locked as call #{row['seq']} · fingerprint {row['hash'][:12]}. "
+                                                  "Commit ledger/calls.csv to git for an outside timestamp."))
+    except ValueError as error:
+        st.session_state["lock_message"] = ("error", str(error))
+
+
+def lock_panel(name, ipo, pred):
+    """Offer to lock a new issue's call in the public track record (only before it lists)."""
+    message = st.session_state.pop("lock_message", None)
+    if message:
+        (st.success if message[0] == "ok" else st.error)(message[1], icon=":material/lock:")
+    today = datetime.now(UTC).astimezone(ledger.IST).date()
+    book = ledger.load()
+    same = book[book["ipo_name"].str.casefold().str.split().str.join(" ") == " ".join(name.split()).casefold()]
+    if not name.strip():
+        ui.lockbox("Lock this call", "Add the issuer name above to lock this call in the public track record.")
+    elif len(same):
+        r = same.iloc[0]
+        ui.lockbox(f"Already on the record as call #{r['seq']}",
+                   f"{r['call'].title()} at {r['expected']:+.1f}%, locked {r['locked_at'][:10]}. "
+                   "Calls cannot be replaced, so the record cannot be cherry-picked.")
+    elif ipo["listing_date"] <= today:
+        ui.lockbox("Too late to lock", "Calls can only be locked before the listing date (India time).")
+    else:
+        entry = {"ipo_name": name, **{k: ipo[k] for k in FIELDS}, "expected": pred.expected, "low": pred.low,
+                 "high": pred.high, "threshold": pred.threshold, "model": cache.model_id()}
+        ui.lockbox("Put this call on the record",
+                   "Locking writes the call, its range and the model version to the track record with a timestamp "
+                   "and fingerprint. It cannot be edited or removed later, and it is scored after listing.")
+        st.button("Lock this call", icon=":material/lock:", type="primary", on_click=lock_call, args=(entry,))
 
 
 def show_past_check(row):
@@ -158,6 +199,10 @@ def render():
         features = core.build_features(ipo, nifty, vix, count, mean_gain)
         show_market(features, note)
 
+    current = (name, tuple(ipo.values()))
+    if submitted:
+        st.session_state["note_for"] = current
+    submitted = submitted or st.session_state.get("note_for") == current  # keep the note up after a button press
     if not submitted and past_row is None:
         st.caption("Enter the issue details and press **Generate research note**, or pick a past issue above.")
         return
