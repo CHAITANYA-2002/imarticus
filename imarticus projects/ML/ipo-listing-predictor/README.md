@@ -63,7 +63,7 @@ test on 78 IPOs from Jun to Nov 2026. Ends in a Streamlit app.
 
 | | |
 |---|---|
-| **Data** | 634 mainboard IPOs, Jan 2010 – May 2026 (652 in the raw file); listing prices cross-checked against the NSE open, 95% agree |
+| **Data** | Raw Kaggle file: **652 rows × 13 columns**. After cleaning: **634 IPOs** (Jan 2010 – May 2026); feature table 634 rows × 31 columns. Listing prices cross-checked against the NSE open, 95% agree |
 | **Typical IPO** | Median listing gain 6.6%; 1 in 4 IPOs list below the offer price |
 | **Testing** | Tuned on 2010–2023 with time-series cross-validation (year folds); evaluated walk-forward, refit every quarter; 2024–2026 never used to choose anything |
 | **Ranking quality, 2024–26** | Spearman **0.71**, best of all models (subscription lookup 0.67) |
@@ -138,6 +138,29 @@ Notebook: [`notebooks/01_data_cleaning.ipynb`](notebooks/01_data_cleaning.ipynb)
 
 Rules: every raw file is logged with its source, date and SHA-256 in `data/raw/manifest.json`; raw files are never
 edited; mainboard only; **GMP is not used** (unofficial, no checkable history); no scraping of sites whose terms forbid it.
+
+### Total rows and columns at every stage
+
+| Stage | File | Rows | Columns | What a row is |
+|---|---|---|---|---|
+| Raw | `data/raw/kaggle/Initial Public Offering (Updated).xlsx` | **652** | **13** | one IPO, as downloaded |
+| Raw | `data/raw/nse/EQUITY_L.csv` | 2,646 | 8 | one company on NSE's mainboard |
+| Raw | `data/raw/nse/SME_EQUITY_L.csv` | 584 | 8 | one company on NSE's SME platform |
+| Raw | `data/raw/market/nifty50.csv` | 4,384 | 6 | one trading day of NIFTY 50 |
+| Raw | `data/raw/market/india_vix.csv` | 4,383 | 6 | one trading day of India VIX |
+| Cleaned | `data/interim/ipos_kaggle.csv` | 652 | 13 | one IPO, renamed and typed (CMP columns dropped, flags and id added) |
+| Matched | `data/interim/ipos_matched.csv` | 652 | 19 | + NSE symbol and match score |
+| Prices | `data/interim/listing_bars.csv` | 547 | 9 | listing-day open / high / low / close of each matched symbol |
+| Checked | `data/interim/ipos_verified.csv` | 652 | 30 | + Yahoo prices, check label, target, `exclude_reason` |
+| **Used for the model** | rows with no `exclude_reason` | **634** | – | 652 − 18 removed |
+| Features | `data/processed/ipo_features.csv` | **634** | **31** | one IPO with all 18 features and the target |
+| Dev (practice) | features with year < 2024 | **432** | – | 2010–2023 |
+| Test (final exam) | features with year ≥ 2024 | **202** | – | 2024 – May 2026 |
+| Tuning results | `data/processed/cv_results.csv` | 94 | 7 | one setting tried in the grid |
+| Walk-forward predictions | `data/processed/wf_predictions.csv` | 394 | 17 | one IPO from 2019 on (192 in 2019–23 + 202 in 2024–26) |
+| New IPOs, collected | `data/manual/new_ipos.csv` | 127 | 19 | one candidate listing, Jun–Nov 2026 |
+| Forward test | `data/processed/forward_predictions.csv` | **78** | 14 | one usable new IPO |
+| App's model | – | **712** | – | 634 + 78 IPOs used for the final refit |
 
 ### 4.2 Columns
 
@@ -488,8 +511,9 @@ year, and every score is on a year the model had not seen. The 7-day gap matches
 
 ### Step 4: first try of three models
 
-**What I did:** trained Ridge (straight line), Random Forest (400 trees that vote) and LightGBM (trees built one after
-another) with default-ish settings, and measured the miss on the training years and on the next year (`time_eval()`).
+**What I did:** on the 432 dev IPOs (2010–2023), trained Ridge (straight line), Random Forest (400 trees that vote) and
+LightGBM (trees built one after another) with default-ish settings, and measured the miss on the training years and on
+the next year (`time_eval()`, average of the 5 year folds: 192 validation IPOs in total).
 
 | Model | Train MAE | Valid MAE | Train R² | Valid R² |
 |---|---|---|---|---|
@@ -504,7 +528,8 @@ IPOs. Ridge has a small gap but is weak (18.50, worse than the bucket median).
 
 ### Step 5: tune the settings (94 combinations)
 
-**What I did:** a small grid search, every combination scored on the year folds.
+**What I did:** a small grid search on the 432 dev IPOs, every combination scored on the 5 year folds (192 validation
+IPOs, 2019–2023). 94 combinations in total (rows of `cv_results.csv`).
 
 | Model | Settings tried |
 |---|---|
@@ -572,7 +597,8 @@ still expects the 2021 frenzy. This is **concept drift**.
 ### Step 8: walk-forward, retrain every quarter
 
 **What I did:** for each quarter from 2019, trained on every IPO listed before (quarter start − 7 days) and predicted
-that quarter's IPOs (`walk_forward()`). Scored 2019–2023 to choose the model.
+that quarter's IPOs (`walk_forward()`). This gives a prediction for 394 IPOs (2019 onwards). Scored the **192 IPOs of
+2019–2023** to choose the model.
 
 | Model | MAE | Median miss | RMSE | R² | Spearman | Within ±10 pp | Direction right |
 |---|---|---|---|---|---|---|---|
