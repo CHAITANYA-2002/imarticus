@@ -655,6 +655,38 @@
     <div class="no"><b>Day 0</b>Listing day. The answer. Never used as an input.</div>
   </div>
   <p class="plain">For IRCTC (listed 14 Oct 2019) the cutoff was 7 Oct 2019: NIFTY data, VIX and recent-IPO numbers are all from that day or earlier.</p>
+
+  <h3>What is data leakage?</h3>
+  <p>Leakage means the model sees something during training that it could not know in real life, usually a piece of the future. It is the most common, and the most dangerous, mistake in machine learning, because it does not show up as an error: it shows up as a score that looks too good.</p>
+  <div class="vs">
+    <div class="bad"><b class="h">If the model peeks</b>It scores very well in testing ("wow, so accurate"), then fails when used for real, because the future is never known in advance. Like a student who got tomorrow's answer sheet: 100/100, but learnt nothing.</div>
+    <div class="good"><b class="h">With the no-peeking rule</b>The testing score is lower but honest. It is the score you can expect on the next IPO, because every guess was made only from the past.</div>
+  </div>
+
+  <h3>Why 7 days?</h3>
+  <ul>
+    <li>Since Dec 2023 an IPO lists <b>3 working days</b> after applications close (the <b>T+3</b> rule). Before that the gap was up to <b>6 days</b>.</li>
+    <li>3 working days can become 5 or 6 calendar days when a weekend or a holiday falls in between.</li>
+    <li>So <b>7 calendar days</b> puts the cutoff before applications close for every IPO, old or new.</li>
+    <li>The cost: the model misses the last few days of market mood. The benefit: no future information can ever slip in. A small loss of signal is worth a score you can trust.</li>
+  </ul>
+
+  <h3>Every guard against leakage in this project</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>What I did</th><th>What it stops</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Market data (NIFTY, VIX) only up to the cutoff, 7 days before listing</td><td>The model seeing the market around listing day</td></tr>
+        <tr><td>2</td><td>Dropped the CMP (BSE), CMP (NSE) and Current Gains columns</td><td>Using today's price, which nobody knew on listing day</td></tr>
+        <tr><td>3</td><td>"Recent IPOs" counts only IPOs that listed before the cutoff</td><td>Seeing how later IPOs did</td></tr>
+        <tr><td>4</td><td>A 7-day gap between training and validation in every year fold</td><td>A test IPO's close neighbour sitting in the training data</td></tr>
+        <tr><td>5</td><td>Walk-forward: each quarter is predicted by a model trained only on earlier IPOs</td><td>Any guess being made with knowledge of later results</td></tr>
+        <tr><td>6</td><td>Missing values filled with the median inside the pipeline, learnt from training rows only</td><td>Test data leaking into training through the fill value</td></tr>
+        <tr><td>7</td><td>An automated test: adding later IPOs must never change an earlier IPO's features</td><td>Future data creeping into past rows by mistake (a check that runs every time)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="say-it">Say it: "Market data stops 7 days before listing, current-price columns are dropped, folds keep a 7-day gap, and an automated test proves that adding new IPOs never changes an old IPO's features."</div>
 </section>
 
 <section id="features">
@@ -1142,6 +1174,7 @@
     <details><summary>Your model loses to a simple lookup on MAE. So why use it?</summary><p>On the exact number, yes, the bucket median is as good or slightly better (17.3 vs 19.5 pp in 2024 to 2026). But the model ranks IPOs better (Spearman 0.71 vs 0.67), and the decision "apply or skip" is a ranking question. In the backtest the model made more expected profit than every simple rule. I report both, honestly.</p></details>
     <details><summary>Is your model overfitting?</summary><p>I checked with a train vs valid table. Untuned trees missed by ~4 pp on training years and ~15 pp on new years, so I limited tree depth and leaf size, which shrank the gap (~7 vs ~15). Every score I quote is on years the model never saw, and a forward test on 78 later IPOs gave similar results (Spearman 0.72), which an overfit model would not.</p></details>
     <details><summary>How do you know there is no data leakage?</summary><p>Market data stops 7 days before listing; CMP / current-gain columns were dropped; folds keep a 7-day gap; walk-forward only trains on IPOs listed before each quarter; missing values are filled inside the pipeline; and an automated test checks that adding later IPOs never changes an earlier IPO's features.</p></details>
+    <details><summary>You must apply before subscription closes. How can the model use the final subscription?</summary><p>By the evening of the last day the subscription numbers are almost final, and that is when most people apply. The app takes the last-day numbers. The market data is from 7 days earlier, so it is safely in the past either way.</p></details>
     <details><summary>Why MAE and not R&sup2; or RMSE?</summary><p>The target has a long right tail: a few IPOs jump 150 to 250%. RMSE and R&sup2; are dominated by those few. MAE is the average miss in percentage points, which is easy to explain. For the decision I also use Spearman, which measures ranking.</p></details>
     <details><summary>Why Random Forest and not LightGBM?</summary><p>It had the lowest MAE on the 2019 to 2023 walk-forward (16.13 vs 16.23), and I picked it before looking at 2024 to 2026. It also turned out best on ranking in 2024 to 2026. LightGBM is still used for the 80% range (quantile loss).</p></details>
     <details><summary>Why did you keep outliers?</summary><p>They are real IPOs: 300x subscriptions and &#8377;20,000+ crore issues really happened, and they are the most important ones to get right. I used a log scale and MAE so they don't dominate.</p></details>
