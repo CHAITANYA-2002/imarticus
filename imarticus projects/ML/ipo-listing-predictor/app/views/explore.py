@@ -33,7 +33,7 @@ def render():
     ui.section("Demand vs day-one return", "Each dot is one IPO; hover for details")
     fig = go.Figure(go.Scatter(
         x=view["sub_total"], y=gain, mode="markers",
-        marker=dict(size=8, color=colors, opacity=0.7, line=dict(color="#070b14", width=1)),
+        marker=dict(size=8, color=colors, opacity=0.7, line=dict(color=charts.BG, width=1)),
         customdata=np.stack([view["ipo_name"], view["listing_date"].dt.strftime("%d %b %Y")], axis=1),
         hovertemplate="<b>%{customdata[0]}</b><br>%{customdata[1]}<br>Subscribed %{x:.1f}x<br>"
                       "Listing gain %{y:+.1f}%<extra></extra>",

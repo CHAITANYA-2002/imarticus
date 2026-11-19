@@ -1,9 +1,15 @@
 [theme]
-base = "dark"
-primaryColor = "#d4a72c"
-backgroundColor = "#070b14"
-secondaryBackgroundColor = "#0e1524"
-textColor = "#e6e9ef"
+base = "light"
+primaryColor = "#08875d"
+backgroundColor = "#f5f6f8"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#0f172a"
+borderColor = "#e3e6eb"
+showWidgetBorder = true
+baseRadius = "10px"
+
+[theme.sidebar]
+backgroundColor = "#ffffff"
 
 [client]
 toolbarMode = "viewer"

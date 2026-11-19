@@ -39,7 +39,7 @@ def render():
 
     per_ipo = frame["target_gain_pct"] / 100 * LOT_VALUE * frame["sub_rii"].map(allotment_chance)
     fig = go.Figure()
-    for (name, mask), color in zip(plans.items(), [charts.MUTED, charts.BLUE, charts.GOLD], strict=True):
+    for (name, mask), color in zip(plans.items(), [charts.MUTED, charts.BLUE, charts.ACCENT], strict=True):
         path = per_ipo.where(mask, 0).cumsum()
         fig.add_trace(go.Scatter(x=frame["listing_date"], y=path, name=name, mode="lines",
                                  line=dict(color=color, width=2.6 if name == "Follow the desk" else 1.8),
