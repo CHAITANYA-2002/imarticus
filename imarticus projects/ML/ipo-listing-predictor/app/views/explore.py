@@ -5,12 +5,44 @@ import streamlit as st
 from app import cache, charts, ui
 
 
+HEAT_TEXT = {
+    "Hot": "Recent listings have done better than in most months on record. Strong day-one gains tend to pull in "
+           "more applications, so books get crowded and allotment odds fall.",
+    "Warm": "Recent listings are doing better than usual.",
+    "Normal": "Recent listings are in their usual range.",
+    "Cold": "Recent listings are doing worse than in most months on record; demand is usually thinner.",
+    "Quiet": "No mainboard listings in the last 90 days of data.",
+}
+
+
+def heat_section():
+    heat = cache.market_heat()
+    ui.section("Market heat", f"Last 90 days of listings, as of {heat['as_of']:%d %b %Y}")
+    left, right = st.columns([1, 1.6])
+    with left:
+        if heat["count"]:
+            st.plotly_chart(charts.heat_gauge(heat["percentile"], heat["label"]), use_container_width=True,
+                            config={"displayModeBar": False})
+    with right:
+        ui.kpis([
+            ("Listings, last 90 days", f"{heat['count']}", "mainboard IPOs"),
+            ("Avg day-one return", ui.signed(heat["mean_gain"]) if heat["count"] else "–", "same window"),
+        ])
+        st.plotly_chart(charts.heat_history(heat["series"], heat), use_container_width=True,
+                        config={"displayModeBar": False})
+    st.caption(HEAT_TEXT[heat["label"]] + " The model already uses this as an input (recent listings' average "
+               "gain and count).")
+
+
 def render():
     df = cache.history()
     ui.page_header("Market monitor", "Primary market, 2010 to today",
                    f"Every Indian mainboard IPO from 2010 to {df['listing_date'].max():%B %Y}: final-day book and "
                    "day-one return. Filter by year and demand to see how the cycle has moved.")
 
+    heat_section()
+
+    ui.section("Explore the history", "Filter by listing year and demand")
     a, b = st.columns([2, 1])
     years = a.slider("Listing year", int(df.year.min()), int(df.year.max()), (2019, int(df.year.max())))
     min_sub = b.select_slider("Minimum total subscription", options=[0, 1, 3, 10, 30, 100], value=0,

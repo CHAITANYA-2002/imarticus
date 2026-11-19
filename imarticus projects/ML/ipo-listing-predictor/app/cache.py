@@ -3,7 +3,7 @@
 import pandas as pd
 import streamlit as st
 
-from app import core
+from app import core, insights
 from src import ledger
 from src.config import PROCESSED_DIR
 from src.models.train import MODELS_DIR
@@ -39,3 +39,15 @@ def csv(name):
 def model_id():
     """Name and SHA-256 prefix of the model file the app predicts with, stamped on every locked call."""
     return ledger.model_fingerprint(core.LIVE_MODEL if core.LIVE_MODEL.exists() else MODELS_DIR / "deploy.pkl")
+
+
+@st.cache_data
+def loss_calibration():
+    """How the loss chance held up on the 394 walk-forward calls (2019 to May 2026)."""
+    return insights.loss_calibration(pd.read_csv(PROCESSED_DIR / "wf_predictions.csv"))
+
+
+@st.cache_data
+def market_heat():
+    history = core.load_history()
+    return insights.market_heat(history, as_of=history["listing_date"].max())

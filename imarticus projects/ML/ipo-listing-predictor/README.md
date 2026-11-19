@@ -756,7 +756,7 @@ IPOs that fall outside an 80% range, which is what "80%" means.
 | Failure reported | The frozen model's loss is shown, not hidden |
 | Same results every run | Fixed seed (42); rebuilding from raw files gives the same data files |
 | Notebook = pipeline | Notebooks and `python -m src.pipeline` produce the same numbers (checked file by file) |
-| Tested code | 102 automated tests (`pytest`) |
+| Tested code | 123 automated tests (`pytest`) |
 
 ---
 
@@ -864,10 +864,20 @@ Same story as 2024–26: best ranking (0.72), range caught 87%, model earned the
 | Page | What it shows | Question it answers |
 |---|---|---|
 | **Research Note** | Pick a past IPO or enter a new one → verdict, conviction, expected gain, bear and bull case (80% range), allotment odds, expected value of one lot, drivers for and against (SHAP), key risks, 5 most similar past IPOs. For a past IPO, the call made **before** it listed | Should I apply? |
-| Market Monitor | Every IPO since 2010, filters, charts, full table | How is the IPO market doing? |
+| **Planner** | Compare several open issues side by side (call, range, loss chance, retail odds, expected ₹ per lot, ranked), then an allotment planner: retail lot vs small-HNI application across 1–10 family accounts | Which issue, and how should I apply? |
+| Market Monitor | **Market heat** gauge (last 90 days vs every month since 2010), every IPO since 2010, filters, charts, full table | How is the IPO market doing? |
 | **Track Record** | Every call locked **before** listing in a hash-chained ledger, then scored: calls right, subscribe hit rate, losses avoided, 80% range hits, call-vs-outcome chart. Also shows the 78-IPO forward test, clearly marked | Can I trust the calls? |
 | Strategy Performance | Backtest for 2019–23, 2024–26 and the forward test; threshold slider; equity curve | Has following the desk paid off? |
 | Methodology | Data, testing, scores, forward test, limits | Can I trust it? |
+
+**Decision helpers on the Research Note** (`app/insights.py`; they use the existing model, nothing is retrained)
+
+| Helper | What the user sees | How it works |
+|---|---|---|
+| Loss chance | "Chance of listing below issue price: 16%" with a red/green bar | The 80% range (P10, P90) and the median (P50) are treated as three points of the outcome distribution; the chance of a value below 0 is read off by straight-line interpolation |
+| How reliable is it | Table: when the model said X%, how many really listed below issue | Same calculation on the 394 walk-forward calls (2019 to May 2026). Example: calls given 20–35% listed below issue 31% of the time |
+| What-if | Chart of expected return and range as QIB, HNI or retail demand moves from a tenth to ten times today's figure; the point where the call flips | Model re-run on a grid; overall subscription moves by that group's share of the book (QIB 50%, HNI 15%, retail 35%) |
+| Input warning | Amber box when an input is beyond 99% of past IPOs, or the overall figure is outside the QIB/HNI/retail range | Compared with the 712-IPO history |
 
 **Track record ledger (`ledger/calls.csv`)**
 
@@ -929,7 +939,7 @@ streamlit run app/streamlit_app.py       # open http://localhost:8501
 
 - `python -m src.pipeline --no-download` rebuilds everything from the files already in `data/raw/`.
 - Seeds are fixed, so a rebuild reproduces the same numbers.
-- Tests: `pytest -q` (102 tests).
+- Tests: `pytest -q` (123 tests).
 
 **Notebooks** (run from the `notebooks/` folder, in order; they write the same files as `src/`):
 
@@ -1129,9 +1139,10 @@ grid; a QIB-share-of-demand feature; financials and valuation from the RHP; real
 | Backtest | `notebooks/05_backtest.ipynb` | `src/backtest.py` |
 | Forward test (Jun–Nov 2026) | – | `src/forward_test.py` → `reports/forward_test.md` |
 | Track record ledger | – | `src/ledger.py` → `ledger/calls.csv` |
+| Loss chance, what-if, input checks, compare, allotment, market heat | – | `app/insights.py` |
 | Everything in one go | – | `python -m src.pipeline` |
 | App | – | `streamlit run app/streamlit_app.py` |
-| Tests | – | `pytest -q` (102 tests) |
+| Tests | – | `pytest -q` (123 tests) |
 | Class helpers | `notebooks/useful_func.py` (`missing_info`, `out_info`) | – |
 
 ```
@@ -1149,7 +1160,7 @@ ledger/          calls.csv: hash-chained track record (committed to git)
 notebooks/       cleaning, EDA, features, modelling, backtest (01-05)
 reports/         write-ups and figures
 docs/            IPO_guide.html (the same content as a styled page)
-tests/           pytest (102 tests)
+tests/           pytest (123 tests)
 ```
 
 Written reports: [data audit](reports/data_audit.md) · [EDA findings](reports/eda_findings.md) ·

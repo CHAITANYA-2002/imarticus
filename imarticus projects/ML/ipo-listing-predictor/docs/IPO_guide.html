@@ -1222,7 +1222,7 @@
         <tr><td>Failure reported</td><td>The frozen model's loss is in the notebook and README</td><td>Hiding it would mislead</td></tr>
         <tr><td>Same results every run</td><td>Fixed seed (42); rebuilding from raw files gives byte-for-byte the same data files</td><td>Anyone can check the numbers</td></tr>
         <tr><td>Notebook = pipeline</td><td>The notebooks and <code>python -m src.pipeline</code> produce the same numbers (checked file by file)</td><td>The app uses exactly what the notebooks show</td></tr>
-        <tr><td>Tested code</td><td>102 automated tests (<code>pytest</code>), including "adding later IPOs never changes an earlier IPO's features"</td><td>Catches leaks and bugs early</td></tr>
+        <tr><td>Tested code</td><td>123 automated tests (<code>pytest</code>), including "adding later IPOs never changes an earlier IPO's features"</td><td>Catches leaks and bugs early</td></tr>
       </tbody>
     </table>
   </div>
@@ -1498,7 +1498,7 @@
         <tr><td>Forward test (Jun to Nov 2026)</td><td>&ndash;</td><td><code>src/forward_test.py</code>, report in <code>reports/forward_test.md</code></td></tr>
         <tr><td>Everything in one go</td><td>&ndash;</td><td><code>python -m src.pipeline</code></td></tr>
         <tr><td>App</td><td>&ndash;</td><td><code>streamlit run app/streamlit_app.py</code></td></tr>
-        <tr><td>Tests</td><td>&ndash;</td><td><code>pytest -q</code> (102 tests)</td></tr>
+        <tr><td>Tests</td><td>&ndash;</td><td><code>pytest -q</code> (123 tests)</td></tr>
         <tr><td>Class helpers</td><td><code>notebooks/useful_func.py</code> (<code>missing_info</code>, <code>out_info</code>)</td><td>&ndash;</td></tr>
       </tbody>
     </table>

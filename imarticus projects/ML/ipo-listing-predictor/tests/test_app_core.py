@@ -38,3 +38,16 @@ def test_similar_ipos_returns_closest_subscription_profiles(history):
     nearest = similar_ipos(history, target, k=3)
     assert len(nearest) == 3
     assert history.iloc[400]["ipo_name"] in nearest["ipo_name"].tolist()
+
+
+def test_live_market_drops_rows_without_a_close(monkeypatch):
+    from app import core
+
+    def fake_fetch(ticker, start):
+        index = pd.to_datetime([pd.Timestamp.today().normalize() + pd.Timedelta(days=d) for d in (1, 2)])
+        return pd.DataFrame({"close": [100.0, np.nan]}, index=index)
+
+    monkeypatch.setattr(core, "fetch_history", fake_fetch)
+    nifty, vix, _ = core.load_market(live=True)
+    assert nifty["close"].notna().all()
+    assert vix["close"].notna().all()

@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime, timedelta
 import pandas as pd
 import streamlit as st
 
-from app import cache, charts, core, research, ui
+from app import cache, charts, core, insights, research, ui
 from src import ledger
 
 NEW_IPO = "New issue (enter details)"
@@ -75,15 +75,19 @@ def odds_text(odds):
     return f"{odds:.0%}" if odds >= 0.1 else f"1 in {1 / odds:,.0f}"
 
 
-def show_note(name, ipo, pred, past_row, explained, base_value, history):
+def show_note(name, ipo, pred, past_row, explained, base_value, history, deploy, rule):
     verdict, conviction = research.rating(pred.expected, pred.low, pred.threshold)
     meta = (f"Listing {pd.Timestamp(ipo['listing_date']):%d %b %Y} · Issue price ₹{ipo['offer_price']:,.0f} · "
             f"Size ₹{ipo['issue_size_cr']:,.0f} cr · Book {ipo['sub_total']:,.1f}x")
+    warnings = insights.input_warnings(ipo, history)
+    if warnings:
+        ui.warn_panel("Check before trusting this call", warnings)
     ui.research_note(name or "Unnamed issue", meta, verdict, conviction, pred.expected, pred.low, pred.high,
                      odds_text(pred.allotment_odds), pred.expected_value)
 
     actual = past_row["target_gain_pct"] if past_row is not None else None
     st.plotly_chart(charts.range_bar(pred, actual), use_container_width=True, config={"displayModeBar": False})
+    loss_section(pred)
     if past_row is not None:
         show_past_check(past_row)
     else:
@@ -108,6 +112,8 @@ def show_note(name, ipo, pred, past_row, explained, base_value, history):
         ui.section("Driver attribution", f"From the average IPO ({base_value:+.1f}%)")
         st.plotly_chart(charts.contributions(explained), use_container_width=True, config={"displayModeBar": False})
 
+    what_if_section(deploy, rule, ipo, pred)
+
     ui.section("Comparable listings", "Closest past IPOs by QIB, HNI, retail and overall demand")
     similar = core.similar_ipos(history, pred.features)
     st.dataframe(
@@ -118,6 +124,41 @@ def show_note(name, ipo, pred, past_row, explained, base_value, history):
                        **{c: st.column_config.NumberColumn(format="%.1fx") for c in ["QIB", "HNI", "Retail", "Overall"]},
                        "Day-one return": st.column_config.NumberColumn(format="%+.1f%%")},
     )
+
+
+def loss_section(pred):
+    ui.loss_meter(insights.loss_probability(pred.low, pred.median, pred.high))
+    with st.expander("How reliable is this percentage?", icon=":material/fact_check:"):
+        st.caption("Each walk-forward call from 2019 to May 2026 got a loss chance before listing. Grouped by that "
+                   "chance, this is how often those IPOs really listed below issue.")
+        st.dataframe(cache.loss_calibration(), hide_index=True, use_container_width=True, column_config={
+            "Average predicted %": st.column_config.NumberColumn(format="%.0f%%"),
+            "Listed below issue": st.column_config.NumberColumn(format="%.0f%%")})
+
+
+WHAT_IF_GROUPS = {"sub_qib": "QIB", "sub_hni": "HNI / NII", "sub_rii": "Retail"}
+
+
+def what_if_section(deploy, rule, ipo, pred):
+    """How the call would move if one investor group's demand were different."""
+    ui.section("What if demand changes?", "Same issue and market, one investor group's book moved")
+    field = st.segmented_control("Investor group", list(WHAT_IF_GROUPS), default="sub_qib",
+                                 format_func=WHAT_IF_GROUPS.get, key="what_if_group") or "sub_qib"
+    label = WHAT_IF_GROUPS[field]
+    curve = insights.what_if(deploy, rule, ipo, pred.features, field)
+    st.plotly_chart(charts.what_if_chart(curve, float(ipo[field]), pred.threshold, label),
+                    use_container_width=True, config={"displayModeBar": False})
+    flip = insights.flip_point(curve, pred.threshold)
+    now = "SUBSCRIBE" if pred.apply else "AVOID"
+    if flip is None:
+        st.caption(f"The call stays **{now}** across this whole range of {label} demand. Overall subscription moves "
+                   f"with {label} by its share of the book ({insights.BOOK_SHARE[field]:.0%}).")
+    else:
+        other = "AVOID" if now == "SUBSCRIBE" else "SUBSCRIBE"
+        side = "below" if flip < float(ipo[field]) else "above"
+        st.caption(f"The call turns **{other}** if {label} subscription ends {side} about **{flip:,.1f}x** "
+                   f"(today {float(ipo[field]):,.1f}x). Overall subscription moves with {label} by its share of the "
+                   f"book ({insights.BOOK_SHARE[field]:.0%}).")
 
 
 def lock_call(entry):
@@ -210,4 +251,4 @@ def render():
     pred = core.predict(deploy, rule, features, ipo["sub_rii"])
     explained, base_value = core.explain(deploy, explainer, features)
     show_note(name or (past_row["ipo_name"] if past_row is not None else ""), ipo, pred, past_row, explained,
-              base_value, history)
+              base_value, history, deploy, rule)

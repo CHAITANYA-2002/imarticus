@@ -158,6 +158,18 @@ h1, h2, h3, h4 { font-family: 'Inter', sans-serif !important; letter-spacing: -0
 .lockbox b { color:var(--text); }
 .lockbox p { margin:4px 0 0; color:var(--muted); font-size:13.5px; line-height:1.55; }
 
+/* loss meter and input warnings */
+.meter { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 18px;
+         box-shadow:var(--shadow); margin:0 0 14px; }
+.meter .row { display:flex; justify-content:space-between; gap:12px; font-size:13.5px; color:var(--text2); flex-wrap:wrap; }
+.meter .row b { font-variant-numeric: tabular-nums; }
+.meter .bar { display:flex; height:10px; border-radius:999px; overflow:hidden; margin:10px 0 6px; gap:2px; }
+.meter .bar .loss { background:var(--down); } .meter .bar .gain { background:var(--accent); }
+.meter .foot { font-size:12px; color:var(--faint); }
+.warnbox { background:#fffaf0; border:1px solid #f3dfb5; border-radius:16px; padding:12px 18px; margin:0 0 14px; }
+.warnbox h4 { margin:0 0 4px; font-size:.95rem; font-weight:650; color:#8a5a12; }
+.warnbox .risk { color:#5b4520; }
+
 @media (max-width: 640px) {
   .block-container { padding-left:1rem; padding-right:1rem; }
   .pagehead h1 { font-size:1.7rem; }
@@ -294,3 +306,19 @@ def steps(items):
 
 def lockbox(title, text):
     st.markdown(f'<div class="lockbox"><b>{escape(title)}</b><p>{escape(text)}</p></div>', unsafe_allow_html=True)
+
+
+def loss_meter(chance):
+    """Two-part bar: chance of listing below issue vs at or above it."""
+    loss = round(chance * 100)
+    st.markdown(
+        f'<div class="meter"><div class="row"><span>Chance of listing <b class="down">below issue price</b>: '
+        f'<b>{loss}%</b></span><span>At or above issue: <b class="up">{100 - loss}%</b></span></div>'
+        f'<div class="bar"><div class="loss" style="width:{loss}%"></div><div class="gain" style="width:{100 - loss}%">'
+        f'</div></div><div class="foot">Read off the calibrated 80% range. See how it held up on past calls below.'
+        f'</div></div>', unsafe_allow_html=True)
+
+
+def warn_panel(title, items):
+    rows = "".join(f'<div class="risk">{escape(r)}</div>' for r in items)
+    st.markdown(f'<div class="warnbox"><h4>{escape(title)}</h4>{rows}</div>', unsafe_allow_html=True)

@@ -37,6 +37,7 @@ class Prediction:
     allotment_odds: float
     expected_value: float
     features: pd.DataFrame
+    median: float = float("nan")
 
 
 LIVE_MODEL = MODELS_DIR / "deploy_live.pkl"
@@ -75,6 +76,8 @@ def load_market(live=True):
     try:
         start = (nifty.index.max() - pd.Timedelta(days=10)).strftime("%Y-%m-%d")
         fresh_nifty, fresh_vix = fetch_history("^NSEI", start), fetch_history("^INDIAVIX", start)
+        # Yahoo sometimes returns a row with no close for the current session; drop it
+        fresh_nifty, fresh_vix = fresh_nifty.dropna(subset=["close"]), fresh_vix.dropna(subset=["close"])
     except RuntimeError:
         return nifty, vix, f"live fetch failed, using saved data up to {nifty.index.max():%d %b %Y}"
     if fresh_nifty.empty:
@@ -109,7 +112,7 @@ def build_features(ipo, nifty, vix, recent_count, recent_mean_gain):
 
 def predict(deploy, rule, features, sub_rii):
     expected = float(deploy["point"].predict(features[deploy["point_columns"]])[0])
-    p10, _, p90 = deploy["quantiles"].predict(features)[0]
+    p10, p50, p90 = deploy["quantiles"].predict(features)[0]
     margin = deploy["conformal_margin"]
     odds = allotment_chance(sub_rii)
     return Prediction(
@@ -121,6 +124,7 @@ def predict(deploy, rule, features, sub_rii):
         allotment_odds=odds,
         expected_value=expected / 100 * rule["lot_value"] * odds,
         features=features,
+        median=float(p50),
     )
 
 
