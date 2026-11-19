@@ -189,6 +189,8 @@ edited; mainboard only; **GMP is not used** (unofficial, no checkable history); 
 
 Result: **547** IPOs matched, **105** not matched (mostly delisted, merged, or BSE-only).
 
+**So I** had an NSE symbol for 547 IPOs, which let me fetch their real listing-day price from Yahoo.
+
 ### 4.5 The split problem
 
 > **In simple words:** cut a pizza into 5 slices and each slice is worth one fifth. Companies do this with shares
@@ -197,6 +199,8 @@ Result: **547** IPOs matched, **105** not matched (mostly delisted, merged, or B
 
 For each IPO, the first-day prices were multiplied by every split ratio after the listing day (`split_factor`).
 90 of the 545 IPOs with a price had a later split or bonus. **Before the fix only ~63% of prices agreed; after it, 95%.**
+
+**So I** always used the split-restored NSE open; without it about 1 in 6 targets would have been wrong.
 
 ### 4.6 Checking Kaggle's numbers
 
@@ -209,6 +213,8 @@ For each IPO, the first-day prices were multiplied by every split ratio after th
 
 Disagreements were checked by hand against news (CDSL ₹250, Paras Defence ₹475, Nazara ₹1,971, Bansal Wire ₹352):
 **Kaggle was right**, Yahoo's split history was wrong.
+
+**So I** used the NSE-open gain where the two sources agree, and kept Kaggle's number (marked unverified) everywhere else:
 
 | Case | Target used | Marked as | IPOs |
 |---|---|---|---|
@@ -406,46 +412,46 @@ Notebook: [`04_modeling.ipynb`](notebooks/04_modeling.ipynb) (scripts: `src/mode
 > years, then sits an exam on newer years it has never seen. If it only does well on practice questions, it just
 > memorised them.
 
-### 8.1 The model in one table: simple words and the technical name
+Every step below follows the same pattern: **what I did → what the numbers showed → so what I did next.**
 
-| # | Step | In simple words | Technical name (say this) | In the project |
-|---|---|---|---|---|
-| 1 | The job | Look at the subscription and guess the listing gain in % | **Regression** | Target `target_gain_pct` |
-| 2 | Splitting | Learn from old IPOs; hide the newest for the final test | **Time-based train-test split**, hold-out test | 2010–23: 432 IPOs · 2024–26: 202 IPOs |
-| 3 | Practice tests | Learn up to 2018, test 2019; … five tests, 7-day gap | **Time-series cross-validation** (expanding window) | `year_folds()` |
-| 4 | What to beat | "Median gain of past IPOs in the same subscription group" | **Baseline models** | `MedianModel`, `BucketMedian` |
-| 5 | Models tried | Straight line / 400 trees that vote / trees built one after another | **Ridge, Random Forest, LightGBM** | `make_model()` |
-| 6 | Problem 1 | Miss of ~4 on practice years, ~15 on new years | **Overfitting** | `time_eval()` |
-| 7 | Fix 1 | Smaller trees, few settings | **Regularization + hyperparameter tuning** (grid search) | `max_depth=8`, `min_samples_leaf=5`, 94 combos |
-| 8 | Problem 2 | Trained once and left alone, it failed on 2024–26 | **Concept drift** (subscription inflation) | RF 22.03 vs bucket median 17.94 |
-| 9 | Fix 2 | Re-teach every 3 months with the newest IPOs | **Walk-forward validation**, quarterly refit | `walk_forward()` |
-| 10 | Choosing | Smallest miss on 2019–23 | **Model selection** without the test set | Random Forest 16.13 |
-| 11 | Judging | Average miss + right order | **MAE + Spearman rank correlation** | MAE 19.52, Spearman 0.71 |
-| 12 | Range | Bad case and good case that catch ~8 in 10 | **Quantile regression + conformal calibration** | coverage 79% |
-| 13 | Reasons | What pushed each guess up or down | **SHAP** | top: total subscription |
-| 14 | Final | Re-trained once on every IPO, used by the app | **Final refit** | Random Forest on 712 IPOs |
+| Step | What I did | What I saw | So I… |
+|---|---|---|---|
+| [1](#step-1-split-the-data-by-time) | Split by time | Years behave very differently | kept 2024–26 as a hidden final exam |
+| [2](#step-2-choose-the-validation-time-series-cross-validation) | Chose the validation | Shuffled KFold would use the future | used time-series cross-validation by year |
+| [3](#step-3-build-two-baselines) | Built 2 baselines | Bucket median misses 16.26 | set it as the line to beat |
+| [4](#step-4-first-try-of-three-models) | Tried 3 models | Trees: 3.7 on practice, 14.9 on new years | treated it as overfitting and tuned |
+| [5](#step-5-tune-the-settings-94-combinations) | Tuned 94 settings | RF best (16.03); extras didn't help | kept RF depth 8, leaf 5, 13 features |
+| [6](#step-6-exam-1-freeze-the-model-and-test-on-2024-26) | Froze and tested | Every model lost to the bucket median | looked for the reason |
+| [7](#step-7-find-the-reason-subscription-inflation) | Compared eras | 100x+ gain fell 75% → 36.5% | decided to retrain every quarter |
+| [8](#step-8-walk-forward-retrain-every-quarter) | Walk-forward 2019–23 | RF lowest miss (16.13) | chose Random Forest |
+| [9](#step-9-final-exam-walk-forward-on-2024-26) | Walk-forward 2024–26 | Lookup wins MAE, RF wins ranking | judged it by ranking and by money (backtest) |
+| [10](#step-10-predict-a-range-not-one-number) | Built an 80% range | Raw range caught only 56–67% | added conformal calibration (79%) |
+| [11](#step-11-explain-each-guess-shap) | Explained guesses | Subscription drives the guess | used SHAP for the app's reasons |
+| [12](#step-12-final-model) | Final refit | – | refit on all 712 IPOs for the app |
 
-### 8.2 Every decision: the options, what I chose, and why
+### Step 1: split the data by time
 
-| # | Decision | Options I had | Chosen | Why |
-|---|---|---|---|---|
-| 1 | Kind of problem | Classification (apply / skip) · Regression | **Regression** | A number gives both the expected gain and a ranking; apply / skip comes from it with a threshold |
-| 2 | Train / test split | Random `train_test_split` · time split | **Time split**: 2010–23 dev, 2024–26 hold-out | IPOs come in waves; random would learn from 2025 to predict 2019 |
-| 3 | Validation | `KFold(shuffle=True)` · `TimeSeriesSplit` · year folds | **Time-series CV by year + 7-day gap** | KFold leaks the future; `TimeSeriesSplit` cuts by row count, not years, and its gap counts rows, not days |
-| 4 | What to beat | No baseline · median · bucket median | **Both baselines** | ML must beat what an investor does by eye (MAE 17.21) |
-| 5 | Models | Ridge · Random Forest · LightGBM | **All three compared** | From simple to strong, same folds |
-| 6 | Overfitting (train 3.70 vs valid 14.88) | No limit · large grid · limited trees + small grid | **`max_depth=8`, `min_samples_leaf=5`, 94 combos** | Gap shrank to 7.02 vs 15.39; small grid = less chance of a lucky winner. Honest note: the no-limit forest was slightly better on valid (14.88), a next step to test |
-| 7 | Features | +3 "vs last year" · down-weight old years · 13 base | **13 base** | Both extras did not lower validation error |
-| 8 | Train once or retrain? | Freeze at end of 2023 · retrain every quarter | **Retrain every quarter** | Frozen model lost to the bucket median on 2024–26 (22.03 vs 17.94): concept drift |
-| 9 | Final model | Ridge 18.69 · LightGBM 16.23 · Random Forest 16.13 | **Random Forest** | Lowest walk-forward MAE on 2019–23, chosen before looking at 2024–26 |
-| 10 | Main score | RMSE / R² · MAE · Spearman | **MAE + Spearman** | A few 200% IPOs dominate RMSE; apply / skip is a ranking question |
-| 11 | Uncertainty | One number · raw quantile range (56–67%) · quantile + conformal | **Quantile LightGBM + rolling conformal** | An "80% range" must really catch ~80%: 79% after calibration |
-| 12 | Explanations | Feature importance (overall) · SHAP (per IPO) | **SHAP** (importance kept as a check) | The app needs a reason for each IPO |
+**What I did:** kept the newest years hidden as the final exam.
 
-### 8.3 Validation: time-series cross-validation (it is not KFold)
+| Part | Years | IPOs | Used for |
+|---|---|---|---|
+| Dev (practice) | 2010–2023 | 432 | learning and choosing everything |
+| Test (final exam) | 2024 – May 2026 | 202 | checked only at the end |
 
-Its name is **time-series cross-validation** with an **expanding window**, also called **forward chaining**.
-The scikit-learn version of the idea is `TimeSeriesSplit`; here it is written by hand so each fold is one calendar year with a 7-day gap.
+**Why:** EDA Finding 2 and 7: years behave very differently (median gain −2.8% to +23.4%) and subscription keeps inflating.
+
+**So I** used a **time-based train-test split** (hold-out test set), never a random `train_test_split`: a random split
+would learn from 2025 IPOs and be tested on 2019 IPOs, which leaks the future.
+
+### Step 2: choose the validation (time-series cross-validation)
+
+**What I did:** looked at three ways to make practice tests inside 2010–2023.
+
+| Option | Used? | Why |
+|---|---|---|
+| `KFold(shuffle=True)` (class helper `regression_eval`) | No | Mixes years: learns from 2023 to predict 2019 |
+| scikit-learn `TimeSeriesSplit` | No | Cuts by row count, not calendar year; its gap counts rows, not days |
+| **Year folds with a 7-day gap** (`year_folds()`) | **Yes** | Each test is one whole year; training is always before it |
 
 ```python
 def year_folds(d):
@@ -453,6 +459,8 @@ def year_folds(d):
         cutoff = pd.Timestamp(year, 1, 1) - pd.Timedelta(days=7)
         yield d.index[d["listing_date"] < cutoff], d.index[d["year"] == year]
 ```
+
+**What it produced:**
 
 | Test year | Learnt from (IPOs) | Tested on (IPOs) |
 |---|---|---|
@@ -462,87 +470,109 @@ def year_folds(d):
 | 2022 | 331 | 39 |
 | 2023 | 371 | 59 |
 
-The training set grows every year (the "expanding window"). The same folds are used by `time_eval()` (train vs valid
-table, in the style of the class helper `regression_eval`) and by `cv_predict()` (tuning the 94 settings).
+**So I** used **time-series cross-validation with an expanding window** (forward chaining): the training set grows every
+year, and every score is on a year the model had not seen. The 7-day gap matches the market features, which look 7 days back.
 
-### 8.4 Why LightGBM?
+### Step 3: build two baselines
 
-| Job | Why LightGBM | Result |
-|---|---|---|
-| Candidate for the main guess | Often the strongest on tabular data; handles missing values itself; fast | Slightly behind Random Forest (16.23 vs **16.13**), not chosen |
-| **The 80% range** | **Quantile loss is built in** (`objective="quantile"`); scikit-learn's Random Forest has no such option | Three models at alpha 0.1 / 0.5 / 0.9 + conformal → coverage **79%** |
+**What I did:** two models with no ML, scored on the same folds.
 
-### 8.5 What the scores mean
-
-| Score | In simple words | Better when |
-|---|---|---|
-| **MAE** | Average miss in percentage points. Real +30%, guess +10% = miss of 20 | lower |
-| Median miss | The miss on a typical IPO | lower |
-| RMSE | Like MAE, but big misses count extra (squared) | lower |
-| **R²** | How much better than "always guess the average". 1 = perfect, 0 = no better, below 0 = worse | higher |
-| **Spearman** | Are IPOs in the right order, best to worst? 1 = perfect, 0 = random | higher |
-| Within ±10 pp | % of IPOs where the guess was within 10 points | higher |
-| Direction right | % where it correctly said "lists up" / "does not list up" | higher |
-
-<details>
-<summary><b>MAE and R² with a 3-IPO example</b></summary>
-
-| IPO | Real gain | Guess | Miss |
+| Baseline | How it guesses | Valid MAE | Valid R² |
 |---|---|---|---|
-| A | +30% | +20% | 10 |
-| B | +10% | +12% | 2 |
-| C | −5% | +5% | 10 |
+| Median | Same number for every IPO (median of all past IPOs) | 27.26 | −0.34 |
+| **Bucket median** | Median gain of past IPOs in the same subscription group (<1x, 1–3x, 3–10x, 10–30x, 30–100x, 100x+) | **16.26** | 0.51 |
 
-- **MAE** = (10 + 2 + 10) ÷ 3 = **7.3** points.
-- **R²:** the average real gain is 11.7%. Guessing 11.7% for all three gives squared misses totalling 617; the model's
-  squared misses total 204. R² = 1 − 204 ÷ 617 = **0.67**: the model explains 67% of the ups and downs.
-- Because R² squares the misses, a few IPOs that jump 150–250% swing it a lot. That is why **MAE** is the main
-  error score and **Spearman** is used for the apply / skip decision.
+**What I saw:** the bucket median, what an investor does by eye, is already decent (misses ~16 points).
 
-</details>
+**So I** set the bucket median as **the line to beat**. If ML can't beat it, ML is not worth it.
 
-### 8.6 Scorecard: every model, every number
+### Step 4: first try of three models
 
-Best number in each column in **bold**.
+**What I did:** trained Ridge (straight line), Random Forest (400 trees that vote) and LightGBM (trees built one after
+another) with default-ish settings, and measured the miss on the training years and on the next year (`time_eval()`).
 
-**1. First try and tuned: train vs valid** (average of the five year folds, 2019–23)
+| Model | Train MAE | Valid MAE | Train R² | Valid R² |
+|---|---|---|---|---|
+| Ridge, alpha 1 | 11.80 | 18.50 | 0.53 | 0.38 |
+| Random Forest, no limit | **3.70** | 14.88 | 0.94 | 0.56 |
+| LightGBM, 500 trees, 31 leaves | **3.85** | 15.85 | 0.92 | 0.50 |
 
-| Model | Train MAE | Valid MAE | Train R² | Valid R² | Reading |
-|---|---|---|---|---|---|
-| Median baseline | 16.06 | 27.26 | −0.10 | −0.34 | knows nothing |
-| Bucket median baseline | 10.23 | 16.26 | 0.55 | 0.51 | the line to beat |
-| Ridge, alpha 1 | 11.80 | 18.50 | 0.53 | 0.38 | small gap, but weak |
-| Random Forest, no limit | 3.70 | **14.88** | 0.94 | **0.56** | memorises (3.7 vs 14.9) |
-| LightGBM, 500 trees, 31 leaves | 3.85 | 15.85 | 0.92 | 0.50 | memorises (3.9 vs 15.9) |
-| Ridge, tuned (alpha 30) | 11.64 | 18.39 | 0.51 | 0.41 | slightly better |
-| **Random Forest, tuned (depth 8, leaf 5)** | 7.02 | 15.39 | 0.76 | **0.56** | gap shrunk to 7.0 vs 15.4 |
-| LightGBM, tuned | 6.91 | 15.75 | 0.76 | 0.53 | gap shrunk to 6.9 vs 15.8 |
+**What I saw:** the trees miss by ~4 points on years they trained on but ~15 on new years. They memorise the training
+IPOs. Ridge has a small gap but is weak (18.50, worse than the bucket median).
 
-**2. Tuning: best setting of each model** (year folds 2019–23, 94 combinations)
+**So I** treated it as **overfitting** and moved to tuning with limits on the trees (regularization).
+
+### Step 5: tune the settings (94 combinations)
+
+**What I did:** a small grid search, every combination scored on the year folds.
+
+| Model | Settings tried |
+|---|---|
+| Ridge | alpha: 0.3, 3, 30 |
+| Random Forest | max_depth: 4, 8 · min_samples_leaf: 5, 15 (400 trees, max_features 0.5) |
+| LightGBM | n_estimators: 200, 500 · num_leaves: 7, 15 · min_child_samples: 10, 25 · objective: l2, huber |
+| Data options (every model) | features: 13 base / +3 "vs last year" · old years: equal weight / half-life 4 years |
+
+**What I saw (best of each model):**
 
 | Model | Best setting | MAE | Median miss | RMSE | Spearman |
 |---|---|---|---|---|---|
-| **Random Forest** | depth 8, min leaf 5, 400 trees | **16.03** | **9.59** | **26.62** | **0.76** |
+| **Random Forest** | depth 8, min leaf 5 | **16.03** | **9.59** | **26.62** | **0.76** |
 | LightGBM | 200 trees, 15 leaves, min child 25 | 16.45 | 9.73 | 27.07 | 0.74 |
 | Bucket median | – | 17.21 | 10.12 | 27.95 | 0.71 |
 | Ridge | alpha 30 | 18.71 | 11.61 | 29.32 | 0.73 |
 | Median | – | 26.74 | 13.10 | 43.60 | −0.02 |
 
-All winners used the 13 base features and no old-year down-weighting.
+And the overfitting gap after tuning:
 
-**3. Exam 1: frozen at the end of 2023, scored on 2024–26** (202 IPOs, the failed exam)
+| Model | Train MAE | Valid MAE |
+|---|---|---|
+| Random Forest, no limit (before) | 3.70 | 14.88 |
+| **Random Forest, depth 8, leaf 5 (after)** | **7.02** | **15.39** |
+| LightGBM, tuned | 6.91 | 15.75 |
 
-| Model | MAE | Median miss | RMSE | Spearman |
-|---|---|---|---|---|
-| Bucket median | **17.94** | 12.51 | **25.64** | **0.69** |
-| Median | 18.98 | **9.30** | 32.12 | 0.00 |
-| Ridge | 21.29 | 16.65 | 27.86 | 0.65 |
-| Random Forest | 22.03 | 13.54 | 31.29 | **0.69** |
-| LightGBM | 24.61 | 14.25 | 34.29 | 0.67 |
+- All winners used the **13 base features** and **equal weights**: the extras did not lower the error.
+- The gap shrank from ~4 vs ~15 to ~7 vs ~15.
+- Honest note: the no-limit forest was slightly better on valid (14.88 vs 15.39); the grid only tried depth 4 and 8.
 
-Why it failed: subscription inflation (Finding 7). The frozen model still expected 2021-style jumps.
+**So I** kept **Random Forest, `max_depth=8`, `min_samples_leaf=5`, 13 base features**. A limited forest is safer when the
+market shifts, and a small grid means less chance of a lucky winner. "No depth limit" is a next step to test.
 
-**4. Walk-forward, retrained every quarter: 2019–23** (192 IPOs, used to choose the model)
+### Step 6: Exam 1, freeze the model and test on 2024-26
+
+**What I did:** trained the best settings once on 2010–2023 and scored 2024–2026 without any update.
+
+| Model | MAE on 2024–26 |
+|---|---|
+| **Bucket median** | **17.94** |
+| Median | 18.98 |
+| Ridge | 21.29 |
+| Random Forest | 22.03 |
+| LightGBM | 24.61 |
+
+**What I saw:** every ML model **lost** to the simple bucket median.
+
+**So I** did not hide it. I looked for the reason.
+
+### Step 7: find the reason (subscription inflation)
+
+**What I did:** compared the median gain of the same subscription group in three eras.
+
+| Subscription | 2010–2019 | 2020–2023 | 2024–2026 |
+|---|---|---|---|
+| 30 to 100x | 25.1% | 36.9% | 14.1% |
+| 100x and more | 59.2% | **75.0%** | **36.5%** |
+| Median subscription | 4.9x | 22.6x | 28.0x |
+
+**What I saw:** queues got about 6 times longer, and the jump for the same queue roughly halved. A model frozen in 2023
+still expects the 2021 frenzy. This is **concept drift**.
+
+**So I** decided to **retrain every quarter** (nobody would use a model for 3 years without updating it anyway).
+
+### Step 8: walk-forward, retrain every quarter
+
+**What I did:** for each quarter from 2019, trained on every IPO listed before (quarter start − 7 days) and predicted
+that quarter's IPOs (`walk_forward()`). Scored 2019–2023 to choose the model.
 
 | Model | MAE | Median miss | RMSE | R² | Spearman | Within ±10 pp | Direction right |
 |---|---|---|---|---|---|---|---|
@@ -552,7 +582,13 @@ Why it failed: subscription inflation (Finding 7). The frozen model still expect
 | Ridge | 18.69 | 12.01 | 29.31 | 0.42 | 0.73 | 45.8% | 70.8% |
 | Median | 26.70 | 12.92 | 43.47 | −0.28 | 0.03 | 38.5% | 73.4% |
 
-**5. Walk-forward, retrained every quarter: 2024–26** (202 IPOs, the final exam)
+**What I saw:** Random Forest is best on every number.
+
+**So I** chose **Random Forest** as the final model, before looking at 2024–2026.
+
+### Step 9: final exam, walk-forward on 2024-26
+
+**What I did:** scored the same walk-forward predictions on the 202 hidden IPOs.
 
 | Model | MAE | Median miss | RMSE | R² | Spearman | Within ±10 pp | Direction right |
 |---|---|---|---|---|---|---|---|
@@ -562,31 +598,60 @@ Why it failed: subscription inflation (Finding 7). The frozen model still expect
 | Ridge | 20.08 | 15.84 | 26.65 | 0.23 | 0.65 | 34.2% | 74.3% |
 | Median | 19.06 | **9.73** | 31.97 | −0.10 | −0.17 | **51.5%** | 67.8% |
 
-**6. Forward test: 78 new IPOs, Jun–Nov 2026** (scored once)
+**What I saw:**
+- On the **exact number** the simple bucket median misses less (17.26 vs 19.52).
+- On **ranking** (best IPO to worst) the forest is the best of all (Spearman 0.71).
+- R² is low (0.15): a few IPOs that jump 100–250% make R² swing a lot, because it squares the misses.
+- The median baseline looks good on "median miss" only because many IPOs list near a small gain; it cannot rank at all.
 
-| Model | MAE | Median miss | RMSE | R² | Spearman | Within ±10 pp | Direction right |
-|---|---|---|---|---|---|---|---|
-| **Random Forest** | 15.44 | 11.20 | 20.84 | 0.21 | 0.72 | **48.7%** | 78.2% |
-| Bucket median | **14.54** | 11.16 | **19.49** | **0.31** | **0.73** | 47.4% | **80.8%** |
-| Median | 17.65 | **10.62** | 26.19 | −0.25 | −0.05 | **48.7%** | 78.2% |
+**So I** judged the model by **MAE + Spearman**, not R², and tested what really matters for an investor, the
+**apply / skip decision**, in the [backtest](#9-backtest-does-it-make-money): the model earned ₹30,588 vs ₹24,506.
 
 ![MAE by year](reports/figures/07_error_by_year.png)
 ![Predicted vs actual](reports/figures/08_pred_vs_actual.png)
 
-> **Honest reading**
-> - **2019–23** (where the model was chosen): Random Forest is best on every number.
-> - **2024–26 and the forward test:** the simple bucket median is as good or better on most error numbers. The forest
->   is best on ranking in 2024–26 (Spearman 0.71), and ranking is what apply / skip uses: ₹30,588 vs ₹24,506.
-> - **R² is low on new years** (0.15): a handful of 100–250% IPOs make it swing, so MAE and Spearman are the main scores.
-> - **The median baseline** looks good on "median miss" only because many IPOs list near a small gain; it cannot rank
->   (Spearman ≈ 0). Its "direction right" is just the share that listed up, since it always guesses "up".
+<details>
+<summary><b>What the scores mean (with a 3-IPO example)</b></summary>
 
-### 8.7 The 80% range
+| Score | In simple words | Better when |
+|---|---|---|
+| **MAE** | Average miss in percentage points | lower |
+| Median miss | The miss on a typical IPO | lower |
+| RMSE | Like MAE, but big misses count extra (squared) | lower |
+| **R²** | How much better than "always guess the average". 1 = perfect, 0 = no better, below 0 = worse | higher |
+| **Spearman** | Are IPOs in the right order, best to worst? 1 = perfect, 0 = random | higher |
+| Within ±10 pp | % of IPOs where the guess was within 10 points | higher |
+| Direction right | % where it correctly said "lists up" / "does not list up" | higher |
 
-Three LightGBM quantile models (10th, 50th, 90th percentile) were too confident. **Rolling conformal calibration**
-looks at how far the last 60 results fell outside their ranges and widens the next range by that much.
+| IPO | Real gain | Guess | Miss |
+|---|---|---|---|
+| A | +30% | +20% | 10 |
+| B | +10% | +12% | 2 |
+| C | −5% | +5% | 10 |
 
-| Period | Inside the range, before | After calibration | Average width |
+- **MAE** = (10 + 2 + 10) ÷ 3 = **7.3** points.
+- **R²:** the average real gain is 11.7%. Guessing 11.7% for all three gives squared misses totalling 617; the model's
+  total 204. R² = 1 − 204 ÷ 617 = **0.67**.
+
+</details>
+
+### Step 10: predict a range, not one number
+
+**What I did:** trained three LightGBM **quantile** models (10th, 50th, 90th percentile) inside the same walk-forward.
+LightGBM was used here because quantile loss is built in (`objective="quantile"`); scikit-learn's Random Forest has no
+such option.
+
+| Period | Inside the "80%" range |
+|---|---|
+| 2019–23 | 67% |
+| 2024–26 | 56% |
+
+**What I saw:** the range was too confident: it caught far fewer than 80%.
+
+**So I** added **rolling conformal calibration**: look at how far the last 60 results fell outside their ranges and widen
+the next range by that much.
+
+| Period | Before | After calibration | Average width |
 |---|---|---|---|
 | 2019–23 | 67% | 78% | 48 pp |
 | 2024–26 | 56% | **79%** | 57 pp |
@@ -594,9 +659,11 @@ looks at how far the last 60 results fell outside their ranges and widens the ne
 
 ![Range coverage](reports/figures/09_range_coverage.png)
 
-### 8.8 What the model looks at (SHAP)
+### Step 11: explain each guess (SHAP)
 
-| Feature | Average push on the guess (mean \|SHAP\|, pp) |
+**What I did:** SHAP values on the final forest: for each IPO, how many points each feature added or removed.
+
+| Feature | Average push on the guess (pp) |
 |---|---|
 | Total subscription | 8.85 |
 | QIB subscription | 5.38 |
@@ -608,12 +675,20 @@ looks at how far the last 60 results fell outside their ranges and widens the ne
 | NIFTY 3-month return | 0.79 |
 | India VIX | 0.67 |
 
-Subscription drives the guess; market features adjust it by about 1 pp. This matches the EDA.
+**What I saw:** subscription drives the guess; market features adjust it by about 1 point. Same as the EDA, so the
+model learnt the right thing.
+
+**So I** used SHAP for the app's "Investment thesis" (for IRCTC: overall 112x +16.2 pp, HNI +10.8, QIB +8.8, weak market −0.8).
 
 ![SHAP importance](reports/figures/10_shap_importance.png)
 ![SHAP beeswarm](reports/figures/11_shap_beeswarm.png)
 
-### 8.9 One real example: IRCTC (Oct 2019)
+### Step 12: final model
+
+**What I did:** refit the same settings (Random Forest, depth 8, leaf 5, 13 features) on all **712** IPOs up to 4 Nov 2026
+(634 + 78 forward-test IPOs). The app uses this model.
+
+**One real example, IRCTC (Oct 2019):**
 
 | What | Value |
 |---|---|
@@ -622,10 +697,27 @@ Subscription drives the guess; market features adjust it by about 1 pp. This mat
 | 80% range | +9.7% to +65.9% |
 | Real listing gain | **+95.6%** |
 
-The model correctly said "big jump, apply", but the real jump was bigger than the top of its range: one of the
-~1 in 5 IPOs that fall outside an 80% range, which is what "80%" means.
+The model correctly said "big jump, apply", but the real jump was bigger than the top of its range: one of the ~1 in 5
+IPOs that fall outside an 80% range, which is what "80%" means.
 
-### 8.10 What I paid attention to
+### The model in one table: simple words and the technical name
+
+| # | In simple words | Technical name (say this) | In the project |
+|---|---|---|---|
+| 1 | Guess the listing gain in % | **Regression** | Target `target_gain_pct` |
+| 2 | Hide the newest years for the final test | **Time-based train-test split**, hold-out test | 432 / 202 IPOs |
+| 3 | Learn up to one year, test the next, five times | **Time-series cross-validation** (expanding window) | `year_folds()` |
+| 4 | "Same subscription group's median" | **Baseline models** | `MedianModel`, `BucketMedian` |
+| 5 | Straight line / trees that vote / trees in a row | **Ridge, Random Forest, LightGBM** | `make_model()` |
+| 6 | Model memorised practice years | **Overfitting** | `time_eval()` |
+| 7 | Smaller trees, few settings | **Regularization + grid search** | `max_depth=8`, `min_samples_leaf=5` |
+| 8 | Market changed, frozen model failed | **Concept drift** | 22.03 vs 17.94 |
+| 9 | Re-teach every 3 months | **Walk-forward validation**, quarterly refit | `walk_forward()` |
+| 10 | Average miss + right order | **MAE + Spearman** | 19.52, 0.71 |
+| 11 | Honest bad case and good case | **Quantile regression + conformal calibration** | 79% |
+| 12 | Why this guess | **SHAP** | total subscription first |
+
+### What I paid attention to
 
 | Care point | What I did |
 |---|---|
@@ -680,7 +772,10 @@ Notebook: [`05_backtest.ipynb`](notebooks/05_backtest.ipynb)
 
 On 2019–23 (where the threshold was picked, so less fair): model ₹67,632 vs apply-all ₹57,367 vs 30x rule ₹34,679.
 
-The 30x rule has the best hit rate and the **worst** profit: about 5 allotments from 98 applications.
+**What I saw:** the 30x rule has the best hit rate and the **worst** profit: about 5 allotments from 98 applications.
+The model applies widely and skips only the IPOs it expects to fall.
+
+**So I** checked whether the model's extra profit could be luck (next table).
 
 ![Strategy comparison](reports/figures/12_strategy_comparison.png)
 ![Cumulative profit](reports/figures/13_cumulative_profit.png)
@@ -692,12 +787,17 @@ The 30x rule has the best hit rate and the **worst** profit: about 5 allotments 
 | Apply to every IPO | ₹6,082 | ₹1,241 to ₹11,978 | 0.4% | **real edge** |
 | Only if 30x+ | ₹9,083 | −₹10,927 to ₹28,821 | 18.5% | not proven |
 
+**So I** report the edge over "apply to everything" as real (the model loses in only 0.4% of resamples), and the edge
+over the 30x rule as **not proven**.
+
 **What did it skip?** In 2024–26 the model said AVOID to 15 IPOs: 9 listed below offer, 1 flat, 5 above (the best only
 +5.6%). All 15 had low subscription (1.0x to 3.2x). Examples: ACME Solar (−13.1%), Godavari Biorefineries (−12.5%),
 Afcons (−8.0%). It said SUBSCRIBE to 187; high-conviction calls (83 IPOs) listed up 95% of the time.
 
 **Does it only work at exactly −2%?** On 2024–26 every threshold from −5% to about +17% beats applying to everything;
 on 2019–23 anything from −4% to 0% does. The exact −2% should not be over-read.
+
+**So I** kept −2% (picked on 2019–23 only) as the app's SUBSCRIBE / AVOID line: it sits on the safe side, not on a lucky peak.
 
 ![Threshold sensitivity](reports/figures/14_threshold_sensitivity.png)
 
