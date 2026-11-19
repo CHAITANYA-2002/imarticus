@@ -4,14 +4,18 @@ The Slopewatch write-up, in the two forms it needs to exist in.
 
 | File | What it is |
 |---|---|
-| `slopewatch-medium.md` | The post. Medium-ready Markdown, ~3,900 words, 12 images referenced by absolute raw-GitHub URL so they resolve once pushed. |
+| `slopewatch-medium.md` | The post. Medium-ready Markdown, ~3,800 words, 26 images referenced by absolute raw-GitHub URL so they resolve once pushed. |
 | `slopewatch-blog.html` | The same post as a designed standalone page — for sharing a link, or reading it the way it was meant to look. |
-| `images/` | 31 PNGs: 18 diagrams lifted from the walkthrough, 13 generated charts. |
+| `images/` | 37 PNGs: 18 diagrams from the walkthrough, 13 generated charts, 3 rendered tables, 3 editorial cards. |
 | `_rasterize.html` | The tool that made the diagram PNGs. See below. |
 
 ---
 
 ## Publishing to Medium
+
+**Recommended: the paste kit.** Open `medium-paste.html` in a browser and follow its five steps. It copies the title, subtitle and article as rich text. Headings, bold, code and all 26 images come through. The three tables live as images (`images/table-0N.png`) because Medium has no tables, and the cover, dot-field and lessons cards are drawn by `_make_cards.py`. Rebuild it after editing the post with `python blog/_build_medium_paste.py` (add `--ref <branch>` if the images aren't on `main` yet).
+
+### Older routes
 
 Medium does not import Markdown files directly. Two routes, in order of preference:
 
