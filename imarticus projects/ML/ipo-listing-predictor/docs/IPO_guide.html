@@ -1121,6 +1121,7 @@
     </table>
   </div>
 
+  <div class="kid"><b class="h">What each row means</b><ul><li><b>Median baseline:</b> guesses the same number for every IPO. Misses 16 on practice years and 27 on new years; R&sup2; below 0 means it is worse than guessing the average. It knows nothing.</li><li><b>Bucket median baseline:</b> the simple subscription lookup. Misses 16.3 on new years, and the gap from train (10.2) is small. This is the score every model has to beat.</li><li><b>Ridge, alpha 1:</b> the straight-line model with light regularization. Small train/valid gap (11.8 vs 18.5), so it is not memorising, but 18.5 is worse than the lookup: too simple.</li><li><b>Random Forest, no limit:</b> trees grow until each leaf holds one IPO. Train miss 3.7, valid 14.9: it memorised the practice years (classic overfitting), even though its valid score is the best here.</li><li><b>LightGBM, 500 trees, 31 leaves:</b> same story: 3.9 on train, 15.9 on valid. Memorising.</li><li><b>Ridge, tuned (alpha 30):</b> stronger brake on the weights. Valid miss improves a little (18.39), still behind the lookup.</li><li><b>Random Forest, tuned:</b> depth 8 and at least 5 IPOs per leaf. Train miss rises to 7.0, valid 15.4: the gap halves, so it learns patterns instead of memorising. Beats the lookup (16.26).</li><li><b>LightGBM, tuned:</b> 6.9 vs 15.8, same improvement; also beats the lookup, slightly behind the forest.</li></ul></div>
   <p><b>2. Tuning: best setting of each model</b> (year folds 2019&ndash;23, 94 combinations)</p>
   <div class="table-wrap">
     <table>
@@ -1135,6 +1136,7 @@
     </table>
   </div>
 
+  <div class="kid"><b class="h">What each row means</b><ul><li><b>Random Forest:</b> best on every column: average miss 16.03, typical miss 9.6, best ranking 0.76. This setting was chosen.</li><li><b>LightGBM:</b> a close second (16.45, ranking 0.74).</li><li><b>Bucket median:</b> 17.21, the line to beat; both tree models beat it.</li><li><b>Ridge:</b> 18.71, worse than the lookup even after tuning, but it ranks well (0.73).</li><li><b>Median:</b> 26.74 and ranking about 0: no skill at all, shown only as the floor.</li></ul></div>
   <p><b>3. Exam 1: frozen at the end of 2023, scored on 2024&ndash;26</b> (202 IPOs, the failed exam)</p>
   <div class="table-wrap">
     <table>
@@ -1149,6 +1151,7 @@
     </table>
   </div>
 
+  <div class="kid"><b class="h">What each row means</b><ul><li><b>Bucket median:</b> the winner of this exam (17.94). A simple lookup handles the new years best when nothing is updated.</li><li><b>Median:</b> 18.98, and the lowest typical miss (9.3) only because many 2024&ndash;26 IPOs listed near a small gain; it cannot rank anything (0.00).</li><li><b>Ridge:</b> 21.29, worse than both baselines.</li><li><b>Random Forest:</b> 22.03. Trained once on 2010&ndash;23 and frozen, it still expected 2021-style jumps for high subscription. This failure is what showed the subscription inflation.</li><li><b>LightGBM:</b> 24.61, the worst: it followed the old pattern most closely.</li><li>Overall: every ML model lost to the lookup, which is why the final setup retrains every quarter.</li></ul></div>
   <p><b>4. Walk-forward, retrained every quarter: 2019&ndash;23</b> (192 IPOs, used to choose the model)</p>
   <div class="table-wrap">
     <table>
@@ -1163,6 +1166,7 @@
     </table>
   </div>
 
+  <div class="kid"><b class="h">What each row means</b><ul><li><b>Random Forest:</b> best on every column: miss 16.13, typical miss 9.2, ranking 0.76, within 10 points for 54% of IPOs, right direction 77%. Chosen as the final model from this table.</li><li><b>LightGBM:</b> very close (16.23, ranking 0.75). Not chosen for the main guess, kept for the range.</li><li><b>Bucket median:</b> 17.27; retraining lets both tree models beat it.</li><li><b>Ridge:</b> 18.69, behind the lookup on the miss but good at ranking (0.73).</li><li><b>Median:</b> 26.70, no skill. Its 73% direction is just the share of IPOs that listed up, because it always guesses up.</li></ul></div>
   <p><b>5. Walk-forward, retrained every quarter: 2024&ndash;26</b> (202 IPOs, the final exam)</p>
   <div class="table-wrap">
     <table>
@@ -1177,6 +1181,7 @@
     </table>
   </div>
 
+  <div class="kid"><b class="h">What each row means</b><ul><li><b>Random Forest:</b> misses 19.5 on average, 12.1 on a typical IPO, but has the best ranking (0.71). It gets the order of IPOs right, which is what apply / skip uses.</li><li><b>LightGBM:</b> 20.9, ranking 0.68, a little behind the forest.</li><li><b>Bucket median:</b> the smallest average miss (17.26) and best R&sup2; (0.34) and direction (74.8%). On the exact number, the lookup is as good or better: reported honestly.</li><li><b>Ridge:</b> 20.08, and the fewest guesses within 10 points (34%).</li><li><b>Median:</b> best typical miss (9.7) and within-10 (51.5%) only because many IPOs list near a small gain; ranking is negative, so it is useless for choosing IPOs.</li><li>R&sup2; is low for everyone (0.15 for the forest) because a few IPOs jumped 100 to 250%; that is why MAE and Spearman are the main scores.</li></ul></div>
   <p><b>6. Forward test: 78 new IPOs, Jun&ndash;Nov 2026</b> (scored once, nothing changed after)</p>
   <div class="table-wrap">
     <table>
@@ -1188,6 +1193,7 @@
       </tbody>
     </table>
   </div>
+  <div class="kid"><b class="h">What each row means</b><ul><li><b>Random Forest:</b> on 78 IPOs it never saw, average miss 15.4 and ranking 0.72: the same as on 2024&ndash;26, so it did not overfit.</li><li><b>Bucket median:</b> slightly smaller miss (14.5) and ranking 0.73, the same pattern as 2024&ndash;26.</li><li><b>Median:</b> no ranking skill (&minus;0.05); 78% direction is simply the share of IPOs that listed up.</li><li>Only 78 IPOs, so small differences here are not meaningful.</li></ul></div>
   <p class="plain">Ridge and LightGBM point models were not part of the forward test; only the chosen model and the two baselines were scored.</p>
 
   <div class="callout warn"><b>Honest reading</b>
